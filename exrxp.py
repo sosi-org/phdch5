@@ -43,6 +43,11 @@ def exrxp ( n , tau_sec , fs_Hz ):
     r = r [ lim [0] : lim [1] ]
     return r
 
+def exrxp_ntr ( n , tau_sec , fs_Hz , ntr):
+    sig = numpy.zeros((n,ntr), float)
+    for i in range(0,ntr-1):
+        sig[0:n,i] = exrxp(n , tau_sec , fs_Hz)
+    return sig
 
 #todo: move to myshared
 def timesarr(n,fs_Hz):
