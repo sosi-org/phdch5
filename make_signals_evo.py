@@ -1,180 +1,273 @@
-import numpy
-import numpy.random
-import numpy as np
-
-def make_lor1(ntr,nlen):
-    a = numpy.random.randn(ntr,nlen)
-    b= numpy.cumsum(a, axis=1 )
-
-    if 1:
-        #import plotdata
-        #import matplotlib.pyplot as pyplot
-        #import plotdata
-        import matplotlib.pyplot
-        #matplotlib.pyplot.plot(a[0,:])
-        #z=matplotlib.pyplot.plot(a[0,:])
-        z=matplotlib.pyplot.plot(a[0,0:500])
-        z2=matplotlib.pyplot.plot(b[0,0:500])
-        if 0:
-            gfn='graph3.png'
-            matplotlib.pyplot.savefig(gfn)
-            import os
-            os.system("dolphin %s" % gfn)
-        #
-        matplotlib.pyplot.axis([0, 500, -30, 30]) #minx maxx, miny maxy
-        matplotlib.pyplot.show()
-        
-    #import matplotlib.pyplot as plt
-    #plt.plot([1,2,3,4], [1,4,9,16], 'ro')
-    #plt.axis([0, 6, 0, 20])
-    #plt.show()
-
-def make_lor1(ntr,nlen):
-    a = numpy.random.randn(ntr,nlen)
-    b = numpy.cumsum(a, axis=1 )
-
-
-def verbose(s):
-    print(s)
-#np.array([1, 2, 3], dtype=complex)
-
-def erp1 ( n , tau_sec , fs_Hz ):
-    # @type n: int
-    # @type tau_sec: float
-    # @type fs_Hz: float
-    tau_sec=float(tau_sec)
-    fs_Hz=float(fs_Hz)
-    
-    # the kernel function :
-    #klen = 5 * tau_sec / fs_Hz
-    klen = 5 * tau_sec * fs_Hz
-    
-    assert tau_sec>0 #don't include 0
-    
-    klen=int(numpy.ceil(klen))
-    #or insted of ceil, do this:
-    assert klen>0
-    #not sure
-    if klen<1:
-        verbose("Warning: kernel len is small: %d. making it=1"%klen)
-        klen=1
-
-    #assert klen<n*100
-
-    verbose(klen)
-    verbose(n)
-    verbose(n*klen)
-    assert klen<n*1000
-    assert n>0
-    assert n*klen<1E7 #takes up to a few seconds. todo: improve these conditions.
-    #assert n*klen<1E8
-    #klen is ready
-
-        
-    #t = [ 0 : ( klen -1) ] / fs_Hz ;
-    t = np.linspace(0 , klen -1, klen) / fs_Hz
-    k = np.exp ( -t / tau_sec )
-    x = np.random.randn (n + klen *2 + 4 )     # the white noise :
-    #lim = [ klen +3 , n + klen +2]
-    lim = [ klen +3 , n + klen +3] #the size is different to matlab
-    
-    #print x.shape #114
-    #print k.shape #5
-    #print t.shape #5
-    #print "==========="
-    #print n
-    # 'full' is the default mode. 
-    r = np.convolve ( x , k / fs_Hz , 'full') * fs_Hz 
-    # fixing the phase - shift :
-    r = r [ lim [0] : lim [1] ]
-    return r
-
-
-def timesarr(n,fs_Hz):
-    return np.linspace(0 , n-1, n) / fs_Hz
-    # x = np.arange(0, 5, 0.1) #also try this
-    
+#import myshared
+import exrxp
+#import numpy
     
     
 #main
-ntr=100
-nlen=100000
-#make_lor1(ntr,nlen)
+#ntr=10
+#nlen=100000/100
 
+#ntr=30
+ntr=5
+nlen=10
 
-#z=erp1(10,0.1,fs_Hz)
-#z=erp1(100,0.001,fs_Hz)
-#z=erp1(100,1000,fs_Hz)
-fs_Hz=1000
-l=1000
-#z=erp1(l,10,fs_Hz) #10 sec is very slow.
-z=erp1(l,10,fs_Hz) 
-#test: check size, check small lengths, check 0, 0.0001, ...  n=0, n=1
-ts=timesarr(l,fs_Hz)
-import matplotlib.pyplot
-print "---------"
-print z.shape
-print ts.shape
-p1=matplotlib.pyplot.plot(ts,z)
-matplotlib.pyplot.show()
+fs_Hz=1000.0 # Hz
 
+tau_msec = 100.0 #10 msec
+z = exrxp.exrxp (nlen,tau_msec/1000.0,fs_Hz) 
+z2d = exrxp.exrxp_ntr (nlen,tau_msec/1000.0,fs_Hz, ntr)  
 
+ts = exrxp.timesarr(nlen,fs_Hz)
 
-
-"""
-function r = erp ( n , tau_sec , fs_Hz )
-# the kernel function :
-klen = 5 * tau_sec / fs_Hz ;
-t = [ 0 : ( klen -1) ] / fs_Hz ;
-k = exp ( -t / tau_sec ) ;
-lim = [ klen +3 , n + klen +2] ;
-# the white noise :
-x = randn (1 , n + klen *2 + 4 ) ;
-# the convolution ( integration ):
-r = conv ( x , k / fs_Hz ) * fs_Hz ;
-# fixing the phase - shift :
-r = r ( lim (1) : lim (2) ) ;
-"""
+if 0:
+    import matplotlib.pyplot
+    p1=matplotlib.pyplot.plot(ts,z)
+    p1=matplotlib.pyplot.plot(ts,z2d)
+    matplotlib.pyplot.show()
 
 
 
+#M = 4
+M = 10
+import pyentropy
+#z_q = pyentropy.quantise(z, M, uniform='bins') #or 'sampling'
+#z_q,a,b = pyentropy.quantise(z, M, uniform='bins') #or 'sampling'
+#return q_value, bin_bounds, bin_centers
+#why would he need bin_centers?
+z_q,bin_bounds, bin_centers = pyentropy.quantise(z, M,
+                                                 uniform='sampling') 
+                                                 #uniform='bins') #or 'sampling'
+                                                 
+print len(z_q)
+
+
+#print ("%r %r %r    "%(z_q,a,b)) #z_q.shape
+#print ("%r "%(z_q)) 
+#print ("%r "%a)
+#print ("%r "%b)
+from pyentropy import DiscreteSystem
+s = DiscreteSystem(z_q,(1,M), z_q,(1,M))
+#print("***")
+#Warning: Null output conditional ensemble for output : 4 (when M is larger than previous M)
+#s.calculate_entropies(method='plugin', calc=['HX', 'HXY'])
+s.calculate_entropies(method='qe', calc=['HX', 'HXY'])
+#print help(s)  #Ish, Ispike, Ishush, ...
+print s.I()
+#1.73547281807
 
 
 
-#numpy.ndarray(2)
+#git clone git@github.com:robince/pyentropy.git
+#sudo get-apt install libgsl0-dev
+#sudo apt-get  install libgsl0-dev
+#sudo get-apt install build-essential python-dev libgsl0-dev
+#sudo apt-get  install build-essential python-dev libgsl0-dev
+#matlab is sad. matlab is not a software. It's a zone.
+#... test()
+
+#PyEntropy: 
+#If you're input data is continuous, it must first be quantised using pyentropy.quantise() to a suitable discrete representation
+
+
+#import pyentropy
+#pyentropy.test()
 #import numpy as np
-#np.array([1, 2, 3], dtype=complex)
-#np.arange(0,10,1)
-## linspace(start, stop, num)
-#linspace(0, 10)
-#np.linspace(0, 10)
-#np.linspace(0, 10,10)
-#np.linspace(0, 10,11)
-#np.arange(0,10,1)
-#np.arange(0,11,1)
+#from pyentropy import DiscreteSystem
+#x = np.random.random_integers(0,9,10000)
+#y = x.copy()
+#indx = np.random.permutation(len(x))[:len(x)/2]
+#y[indx] = np.random.random_integers(0,9,len(x)/2)
+#s = DiscreteSystem(x,(1,10), y,(1,10))
+#s.calculate_entropies(method='plugin', calc=['HX', 'HXY'])
+#s.I()
+#s.calculate_entropies(method='pt', calc=['HX', 'HXY'])
+#s.I()
+#s.calculate_entropies(method='qe', calc=['HX', 'HXY'])
+#s.I()
+#s.calculate_entropies(method='nsb', calc=['HX', 'HXY'])  #did not work
+#np.log2(10) - (-9*0.05*np.log2(0.05) - 0.55*np.log2(0.55))
+
+
+z2d = exrxp.exrxp_ntr (nlen,tau_msec/1000.0,fs_Hz, ntr)
+#print z2d
+
+if 0:
+    import matplotlib.pyplot
+    matplotlib.pyplot.plot(ts,z2d)
+    matplotlib.pyplot.show()
+
+
+def quantize_2d(z2d, M, uniform_code):
+    #z2d_reshaped=z2d.reshape(z2d.size)
+    #z2d_reshaped_q,bin_bounds, bin_centers = pyentropy.quantise(z2d_reshaped, M, uniform='bins')
+    #z2d_q = z2d_reshaped_q.reshape(z2d.shape)
+    z2d_reshaped=z2d.reshape(z2d.size)
+    z2d_reshaped_q,bin_bounds, bin_centers = pyentropy.quantise(z2d_reshaped, M, uniform=uniform_code)
+    z2d_q = z2d_reshaped_q.reshape(z2d.shape)
+    return z2d_q
+
+z2d_q = quantize_2d(z2d, M, 'sampling') #'bins')
+print z2d_q.shape
+
+def sliding(zq, L, step=1): #also step between L elements?
+    #zq: (nlen,ntr)
+    assert step==1
+    import numpy
+    ns = int(numpy.floor((zq.shape[0]-L+1)/step)) #only tested for step==1
+    print "ns=%d"%ns
+    ntr=zq.shape[1]
+    #zL=numpy.zeros((ns,ntr), type(zq[0,0]))
+    zL=numpy.zeros((L,ns*ntr), type(zq[0,0]))
+    #nta = numpy.zeros(nlen, type(zq[0,0]))
+    nta = numpy.zeros(ns,int)
+    #nl = zq[
+    start = 0
+    ntrctr=0
+    for i in range(ns):
+        print start
+        a=zq[0+start:L+start,:]  # Lx30
+        print a.shape #2x30
+        #print (0+start,L+start) #0,2 for L=2
+        #zL[i,:]=zq[0+start:L+start,:]
+        #print zL[i+0:i+L,:]
+        #zL[i+0:i+L,:]=zq[0+start:L+start,:]
+        #zL[i+0:i+L,:] = a
+        zL[0:L,ntrctr+0:ntrctr+ntr] = a
+        #start = start + (step-1+L)
+        start = start + 1
+        nta[i] = ntr
+        ntrctr=ntrctr+ntr
+    return zL,nta
+
+
+#z2dqL,nta = sliding(z2d_q, L=1)
+z2dqL,nta = sliding(z2d_q, L=2)
+#z2dqL,nta = sliding(z2d, L=2)
+
+print "---"
+
+if 0:
+    import matplotlib.pyplot
+    print "***"
+    print range(z2dqL.shape[0]) #[0,1]
+    print z2dqL[0,:].shape #[270] ----> 9 x 30
+    #there is an error ad its ok
+    matplotlib.pyplot.plot(range(z2dqL.shape[0]),z2dqL[0,:])
+    matplotlib.pyplot.show()
+
+print z2d_q.shape
+print z2d.shape
+print z2dqL.shape
+
+#print z2dqL.T
+#print z2dqL[:,0:20].T
+#print z2d_q[:,0:10].T
+print z2dqL.T
+print z2d_q.T
+
+
+exit(0)
+
+
+
+
+
+#    [[1 1]
+#     [6 8]
+#     [8 7]
+#     [5 4]
+#     [3 3]
+#     [1 1]
+#     [8 7]
+#     [7 8]
+#     [4 5]
+#     [3 3]
+#     [1 0]
+#     [7 6]
+#     [8 5]
+#     [5 5]
+#     [3 3]
+#     [0 0]
+#     [6 6]
+#     [5 7]
+#     [5 8]
+#     [3 3]
+#     [0 0]
+#     [6 6]
+#     [7 5]
+#     [8 9]
+#     [3 3]
+#     [0 0]
+#     [6 6]
+#     [5 4]
+#     [9 9]
+#     [3 3]
+#     [0 0]
+#     [6 8]
+#     [4 4]
+#     [9 9]
+#     [3 3]
+#     [0 1]
+#     [8 7]
+#     [4 4]
+#     [9 9]
+#     [3 3]
+#     [1 1]
+#     [7 7]
+#     [4 4]
+#     [9 9]
+#     [3 3]]
+#    [[1 1 1 0 0 0 0 0 1 1]
+#     [6 8 7 6 6 6 6 8 7 7]
+#     [8 7 8 5 7 5 4 4 4 4]
+#     [5 4 5 5 8 9 9 9 9 9]
+#     [3 3 3 3 3 3 3 3 3 3]]
+
+#SortedDiscreteSystem(X, X_dims, Ym, Ny)
+#s = DiscreteSystem(z2d_q,(1,M), z2d_q,(1,M))
+import numpy
+nta=numpy.zeros(nlen)+ntr
+#print nta
+#s= SortedDiscreteSystem(z2d_q, (1,M), M, nta)
+from pyentropy import SortedDiscreteSystem
+#s= SortedDiscreteSystem(z2d_q, (1,M), nlen, nta) 
+#z2dq.shape[0] must be eq Xn
+print nta.sum()
+print z2d_q.shape
+s= SortedDiscreteSystem(z2d_q, (z2d_q.shape[0],M), nlen, nta)
+#s.calculate_entropies(method='qe', calc=['HX', 'HXY'])
+#print s.I()
+
+#SortedSystem:(X, X_dims,Y_m,Ny)
 #
-#history
-#math.exp(np.arange(0,11,1))
-#math.exp(2)
-#math.exp([2,3])
-#math.exp(  )
-#np.linspace(0, 10,11)
-#math.exp(np.linspace(0, 10,11))
-#x = np.linspace(-2*np.pi, 2*np.pi, 100)
-#x
-#xx = x + 1j * x[:, np.newaxis]
-#xx
-#np.newaxis
-#type(np.newaxis)
-#np.exp(x)
-#np.exp(xx)
-#np.exp(  )
-#x = np.exp(np.linspace(-2*np.pi, 2*np.pi, 100))
-#np.exp(np.linspace(-2*np.pi, 2*np.pi, 100))
-#history
+#Check and assign inputs.
+#
+#:Parameters:
+#  X : (X_n, t) int array
+#    Array of measured input values. X_n variables in X space, t trials
+#  X_dims : tuple (n,m)
+#    Dimension of X (input) space; length n, base m words
+#  Y_m : int 
+#    Finite alphabet size of single variable Y
+#  Ny : (Y_m,) int array
+#    Array of number of trials available for each stimulus. This should
+#    be ordered the same as the order of X w.r.t. stimuli. 
+#    Y_t.sum() = X.shape[1]
+#
+#
+#
+
+#z2d_q: (1000,10) = (nlen,ntr)
+# X_n = nlen = 1000
+# t = 10 = ntr
+# X_dims = (?,M)
+# Y_m=len(?)
 
 
 
-#http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html
-#http://docs.scipy.org/doc/numpy/reference/generated/numpy.linspace.html
-#http://docs.scipy.org/doc/numpy/reference/generated/numpy.convolve.html
+
+# for i in xrange(self.Y_dim):
+#               send = sstart+self.Ny[i]
+#               indx = slice(sstart,send)
+#               sstart = send
+#
