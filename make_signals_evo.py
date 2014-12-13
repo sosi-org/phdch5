@@ -44,34 +44,48 @@ tau_n_msec = 1.0 # msec
 tau_s_msec = 5.0 # msec
 
 
+
+est_mi = []
+est_M = []
+
 import pyentropy
-M = 4
+for M in range(2,50,1):
 
-#1.89216274871  M=10
-#0.243915598515 M=4
+    #1.89216274871  M=10
+    #0.243915598515 M=4
 
-import numpy
+    import numpy
 
-#z2d = exrxp.exrxp_ntr (nlen,tau_msec/1000.0,fs_Hz, ntr)
-z2d = exrxp.exrxp_ntr (nlen,tau_n_msec/1000.0,fs_Hz, ntr)  
-z0 = exrxp.exrxp_ntr (nlen,tau_s_msec/1000.0,fs_Hz, 1)*2
-resp2d = z2d + numpy.tile(z0,[1,ntr])
-#print z2d.shape # nlen*ntr
+    #z2d = exrxp.exrxp_ntr (nlen,tau_msec/1000.0,fs_Hz, ntr)
+    z2d = exrxp.exrxp_ntr (nlen,tau_n_msec/1000.0,fs_Hz, ntr)  
+    z0 = exrxp.exrxp_ntr (nlen,tau_s_msec/1000.0,fs_Hz, 1)*2
+    resp2d = z2d + numpy.tile(z0,[1,ntr])
+    #print z2d.shape # nlen*ntr
 
-z2d_q = quantize_2d(resp2d, M, 'sampling') #'bins')
-z2dqL,nta = sliding(z2d_q, L=2)
-#import numpy
-from pyentropy import SortedDiscreteSystem
-s = SortedDiscreteSystem(z2dqL, (z2dqL.shape[0],M), len(nta), nta)
-s.calculate_entropies(method='qe', calc=['HX', 'HXY'])
-print s.I()
+    z2d_q = quantize_2d(resp2d, M, 'sampling') #'bins')
+    z2dqL,nta = sliding(z2d_q, L=2)
+    #import numpy
+    from pyentropy import SortedDiscreteSystem
+    s = SortedDiscreteSystem(z2dqL, (z2dqL.shape[0],M), len(nta), nta)
+    s.calculate_entropies(method='qe', calc=['HX', 'HXY'])
+    mi = s.I()
+    print M
+    print mi
 
 
-ts = exrxp.timesarr(nlen,fs_Hz)
+    if 0:
+        ts = exrxp.timesarr(nlen,fs_Hz)
+        import matplotlib.pyplot
+        p1=matplotlib.pyplot.plot(ts,resp2d)
+        p1=matplotlib.pyplot.plot(ts,z0)
+        matplotlib.pyplot.axis([0, 0.3, -10,10]) #minx maxx, miny maxy
+        matplotlib.pyplot.show()
+
+    est_mi.append(mi)
+    est_M.append(M)
+
 import matplotlib.pyplot
-p1=matplotlib.pyplot.plot(ts,resp2d)
-p1=matplotlib.pyplot.plot(ts,z0)
-matplotlib.pyplot.axis([0, 0.3, -10,10]) #minx maxx, miny maxy
+p1=matplotlib.pyplot.plot(est_M,est_mi)
 matplotlib.pyplot.show()
-
-
+    
+        
