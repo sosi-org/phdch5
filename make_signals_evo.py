@@ -47,22 +47,49 @@ def erp1 ( n , tau_sec , fs_Hz ):
     print klen #0.0005
     
     #not sure
-    if klen<1:
-        klen=1
+    if klen<2:
+        klen=2
     
     #t = [ 0 : ( klen -1) ] / fs_Hz ;
-    t = np.linspace(0 , klen -1, klen) / fs_Hz 
+    t = np.linspace(0 , klen -1, klen).T / fs_Hz 
     #print(t[:10])
-    print("t=%r"%t)
-    k = np.exp ( -t / tau_sec ) ;
+
+    t0=t
+    t=t.reshape(( t.shape[0],1 )) #single column
+
+    #print("t=%r"%t)
+    #print("t=%r"%t.transpose())
+    #print "***********************"
+    ##print (1,t.shape[0] )
+    ##t=t.reshape((t.shape[0],1 )) #single column
+    #print "--------"
+    #print t.shape
+    #print t.transpose().shape
+    ##print t.shape
+    # SIZE PROBLEM:  the shape [1,5] cannot be convolved. you need to change the shape: [n,] (RESOLVED)
+    
+    k = np.exp ( -t0 / tau_sec ) ;
     lim = [ klen +3 , n + klen +2] ;
     # the white noise :
-    x = np.random.randn (1 , n + klen *2 + 4 ) ;
+    print "***"
+    x = np.random.randn (n + klen *2 + 4 ) ;
+    print "***"
+    k = k.transpose()
     # the convolution ( integration ):
     #r = np.conv ( x , k / fs_Hz ) * fs_Hz ; #full, same, or valid?
-    print("x=%r"%x)
-    print("k=%r"% (k / fs_Hz) )
+    #print("x=%r"%x)
+    #print("k=%r"% (k / fs_Hz) )
+    print x.shape
+    print k.shape
+    #print("x: %r"% (x.shape) )
+    #print("k: %r"% (k.shape) )
+    #r = np.convolve ( x , k / fs_Hz ) * fs_Hz ;
     r = np.convolve ( x , k / fs_Hz ) * fs_Hz ;
+    
+    
+    
+    
+    
     # fixing the phase - shift :
     r = r [ lim [0] : lim [1] ] ;
     return r
@@ -70,7 +97,7 @@ def erp1 ( n , tau_sec , fs_Hz ):
 #main
 ntr=100
 nlen=100000
-make_lor1(ntr,nlen)
+#make_lor1(ntr,nlen)
 
 
 z=erp1(10,0.1,1000)
