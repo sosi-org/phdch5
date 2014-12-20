@@ -1,3 +1,5 @@
+import pyentropy
+
 def quantize_2d(z2d, M, uniform_code):
     #z2d_reshaped=z2d.reshape(z2d.size)
     #z2d_reshaped_q,bin_bounds, bin_centers = pyentropy.quantise(z2d_reshaped, M, uniform='bins')
@@ -43,13 +45,15 @@ fs_Hz=1000.0 # Hz
 tau_n_msec = 1.0 # msec
 tau_s_msec = 5.0 # msec
 
+#L=1 ---> Plateau.  L=2 ---> grows inf ly (bias?)
 
 
 est_mi = []
 est_M = []
 
-import pyentropy
-for M in range(2,40,1):
+#import pyentropy
+#for M in range(2,40,1):
+for M in range(2,80,4):
 
     #1.89216274871  M=10
     #0.243915598515 M=4
@@ -65,7 +69,6 @@ for M in range(2,40,1):
     z2d_q = quantize_2d(resp2d, M, 'sampling') #'bins')
     z2dqL,nta = sliding(z2d_q, L=2)
     #z2dqL,nta = sliding(z2d_q, L=1)
-    #L=1 ---> Plateau.  L=2 ---> grows inf ly (bias?)
     #import numpy
     from pyentropy import SortedDiscreteSystem
     s = SortedDiscreteSystem(z2dqL, (z2dqL.shape[0],M), len(nta), nta)
@@ -94,3 +97,7 @@ p1=matplotlib.pyplot.plot(est_M,est_mi)
 matplotlib.pyplot.show()
     
         
+# scp root@134.213.57.138:~/exhdd/exhdd/u/matlab/m9-markov5/makelorresponse.m ..
+# rgrep analyti . |awk -F '%' {'print $1;'} |grep analyti|grep -v analytical\' |more
+# analytical_lor.m
+# scp root@134.213.57.138:~/exhdd/exhdd/u/matlab/m9-markov5/analytical_lor.m ..
