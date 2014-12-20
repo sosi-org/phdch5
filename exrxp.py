@@ -41,11 +41,12 @@ def exrxp ( n , tau_sec , fs_Hz ):
     r = np.convolve ( x , k / fs_Hz , 'full') * fs_Hz 
     # fixing the phase - shift :
     r = r [ lim [0] : lim [1] ]
+    #for test: r=numpy.cumsum(r)
     return r
 
 def exrxp_ntr ( n , tau_sec , fs_Hz , ntr):
     sig = numpy.zeros((n,ntr), float)
-    for i in range(0,ntr-1):
+    for i in range(ntr):
         sig[0:n,i] = exrxp(n , tau_sec , fs_Hz)
     return sig
 
