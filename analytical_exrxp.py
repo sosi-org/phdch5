@@ -1,14 +1,67 @@
-import numpy
-def analytical_exrxp(tau_s_msec,sigma_s,tau_n_msec,sigma_n, fs_Hz,d_freq)
-	#see analytical_lor.m
-	#;
-	# function [mi_persec, psdinfo]=analytical_lor(tau_s_msec,sigma_s,tau_n_msec,sigma_n, fs_Hz,d_freq)
+import numpy as np
+import math
 
-	nyquist_freq = fs_Hz/2;
-	# freq_arr =  - nyquist_freq : d_freq : nyquist_freq
-	# np.exp(np.linspace(-2*np.pi, 2*np.pi, 100))
-	numfreq = #d_freq
-	freq_arr, freq_step =  np.linspace(-nyquist_freq, nyquist_freq, numfreq, False, True )
+def exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n, fs_Hz,d_freq=0.001235456789):
+    #see analytical_lor.m
+    #;
+    # function [mi_persec, psdinfo]=analytical_lor(tau_s_msec,sigma_s,tau_n_msec,sigma_n, fs_Hz,d_freq)
+    nyquist_freq = fs_Hz/2
+    # freq_arr =  - nyquist_freq : d_freq : nyquist_freq
+    # np.exp(np.linspace(-2*np.pi, 2*np.pi, 100))
+    numfreq = nyquist_freq / d_freq
+    #freq_arr =  - nyquist_freq : d_freq : nyquist_freq
+    #freq_arr, freq_step =  np.linspace(-nyquist_freq, nyquist_freq, numfreq, False, True )
+    freq_arr, freq_step =  np.linspace(start=-nyquist_freq, stop=nyquist_freq, num=numfreq, endpoint=False,  retstep=True )
+    #return freq_arr, freq_step
+    nyquist_omega = nyquist_freq*2*math.pi
+    omega=freq_arr*2*math.pi
+    taus=tau_s_msec/1000.0 #unit conversion
+    taun=tau_n_msec/1000.0
+
+    var_s = taus*math.atan(nyquist_omega*taus)/math.pi #i.e., tau/2 if fs_Hz=Inf
+    var_n = taun*math.atan(nyquist_omega*taun)/math.pi
+    #return omega
+    #np.pow(np.power(omega,2)+np.power(taus,-2),-1)
+    psd_s = 1.0 / (np.power(omega,2)+np.power(taus,-2)) * (np.power(sigma_s,2) / var_s)
+    psd_n = 1.0 / (np.power(omega,2)+np.power(taun,-2)) * (np.power(sigma_n,2) / var_n)
+
+    psd_snr = psd_s / psd_n
+
+    #psd_s=1./(omega.^2+taus.^(-2)) .* sigma_s.^2 / var_s
+    #psd_n=1./(omega.^2+taun.^(-2)) .* sigma_n.^2 / var_n
+    #psd_snr = psd_s ./ psd_n
+
+    #sum or np.sum?
+    def test():
+        #for test:
+        #the following should be 1.0 (iof the vriance is successfully corrected)
+        ratio_s=np.sum(psd_s)*np.mean(np.diff(omega))/(2*math.pi)/math.pow(sigma_s,2)
+        ratio_n=np.sum(psd_n)*np.mean(np.diff(omega))/(2*math.pi)/math.pow(sigma_n,2)
+        print ratio_s-1  #very low error:    5.4888e-06
+        print ratio_n-1  # error:  1.1929e-05
+    test()
+
+    #figure(10);clf;
+    #plot(freq_arr,psd_snr)
+    #end
+
+    #integration
+    d_omega = np.mean(np.diff(omega));
+    mi_persec=0.5*np.sum(  np.log2(1+psd_snr )  ) * d_omega /(2*math.pi)
+
+    freq_arr #only will contain only frequencies in nyquist range
+    return psd_s,psd_n,freq_arr,var_s,var_n
+
+
+
+"""
+import analytical_exrxp as e
+a,b=e.exrxp_analytical_mi(1,2,1,2,10000)
+b is 0.002470913640085731
+"""
+
+
+
 
 """
 MATLAB CODE:   analytical_lor.m
