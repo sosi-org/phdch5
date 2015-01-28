@@ -42,8 +42,14 @@ nlen=1000
 
 
 fs_Hz=1000.0 # Hz
-tau_n_msec = 1.0 # msec
-tau_s_msec = 5.0 # msec
+tau_n_msec = 1.0*100 # msec
+tau_s_msec = 5.0*100 # msec
+
+
+
+# sigma_s=10;sigma_n=2 #why faster growing by M ?
+sigma_s=1
+sigma_n=1
 
 #L=1 ---> Plateau.  L=2 ---> grows inf ly (bias?)
 
@@ -59,14 +65,15 @@ est_a_mi = []
 #for M in [2,3,4,5,6,7,8,9,10,11]:
 for M in [2,3,11]:
 
+
     #1.89216274871  M=10
     #0.243915598515 M=4
 
     import numpy
 
     #z2d = exrxp.exrxp_ntr (nlen,tau_msec/1000.0,fs_Hz, ntr)
-    z2d = exrxp.exrxp_ntr (nlen,tau_n_msec/1000.0,fs_Hz, ntr) * 2 #*2*4
-    z0 = exrxp.exrxp_ntr (nlen,tau_s_msec/1000.0,fs_Hz, 1)
+    z2d = exrxp.exrxp_ntr (nlen,tau_n_msec/1000.0,fs_Hz, ntr) * sigma_n #* 2 #*2*4
+    z0 = exrxp.exrxp_ntr (nlen,tau_s_msec/1000.0,fs_Hz, 1) * sigma_s
     resp2d = z2d + numpy.tile(z0,[1,ntr])
     #print z2d.shape # nlen*ntr
 
@@ -81,8 +88,6 @@ for M in [2,3,11]:
     print M
     print mi
 
-    sigma_s=1
-    sigma_n=1
     import analytical_exrxp as e
     a=e.exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n,fs_Hz)
     a_mi_persec = a[0]
@@ -128,3 +133,33 @@ pp.show()
 # rgrep analyti . |awk -F '%' {'print $1;'} |grep analyti|grep -v analytical\' |more
 # analytical_lor.m
 # scp root@134.213.57.138:~/exhdd/exhdd/u/matlab/m9-markov5/analytical_lor.m ..
+
+
+
+import numpy.fft
+#def fft_psd(signal,fs_Hz):
+#    a=numpy.fft.fft()
+#    pass
+
+
+#def fft_freqs(l,fs_Hz):
+#    physical_length = l / fs_Hz;
+#    frq1= 1/physical_length * [ 0:(len-1) ]
+#    FFT_freqs = frq1
+#    idx2=length(FFT_freqs):(-1):length(FFT_freqs)/2+1
+#    FFT_freqs(idx2) = -frq1(2:(length(idx2)+1))
+
+#cd ~/exhdd/exhdd/u/matlab/m9-markov5/
+#cat ./m7-Markov_proj3/fftfreqs.m
+#function FFT_freqs=fftfreqs(len,fs_Hz)
+#    physical_length = len / fs_Hz;
+#    frq1= 1/physical_length * [ 0:(len-1) ];
+#    FFT_freqs = frq1;
+#    idx2=length(FFT_freqs):(-1):length(FFT_freqs)/2+1;
+#    FFT_freqs(idx2) = -frq1(2:(length(idx2)+1));
+#end
+    
+#%    MATLAB's code:
+#% NFFT = 2^nextpow2(L); % Next power of 2 from length of y
+#% Y = fft(y,NFFT)/L;
+#% f = Fs/2*linspace(0,1,NFFT/2+1);

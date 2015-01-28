@@ -48,7 +48,7 @@ def exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n, fs_Hz,d_freq=0.00
     #end
 
     #integration
-    d_omega = np.mean(np.diff(omega));
+    d_omega = np.mean(np.diff(omega))
     mi_persec=0.5*np.sum(  np.log2(1+psd_snr )  ) * d_omega /(2*math.pi)
 
     #freq_arr #only will contain only frequencies in nyquist range
