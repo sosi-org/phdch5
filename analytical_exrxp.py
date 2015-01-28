@@ -1,3 +1,5 @@
+#todo: packagename: exrxp --> class exrxp.analytical_mi(fs_Hz,d_freq=0.001235456789) 
+# members:  (tau_s_msec,sigma_s,tau_n_msec,sigma_n)# fs_Hz
 import numpy as np
 import math
 
@@ -37,8 +39,8 @@ def exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n, fs_Hz,d_freq=0.00
         #the following should be 1.0 (iof the vriance is successfully corrected)
         ratio_s=np.sum(psd_s)*np.mean(np.diff(omega))/(2*math.pi)/math.pow(sigma_s,2)
         ratio_n=np.sum(psd_n)*np.mean(np.diff(omega))/(2*math.pi)/math.pow(sigma_n,2)
-        print ratio_s-1  #very low error:    5.4888e-06
-        print ratio_n-1  # error:  1.1929e-05
+        print "test: error=%g"%(ratio_s-1,)  #very low error:    5.4888e-06
+        print "test: error=%g"%(ratio_n-1,)  # error:  1.1929e-05
     test()
 
     #figure(10);clf;
@@ -49,8 +51,8 @@ def exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n, fs_Hz,d_freq=0.00
     d_omega = np.mean(np.diff(omega));
     mi_persec=0.5*np.sum(  np.log2(1+psd_snr )  ) * d_omega /(2*math.pi)
 
-    freq_arr #only will contain only frequencies in nyquist range
-    return psd_s,psd_n,freq_arr,var_s,var_n
+    #freq_arr #only will contain only frequencies in nyquist range
+    return mi_persec, psd_s,psd_n,freq_arr,var_s,var_n
 
 
 

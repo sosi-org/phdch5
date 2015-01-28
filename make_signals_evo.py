@@ -50,10 +50,14 @@ tau_s_msec = 5.0 # msec
 
 est_mi = []
 est_M = []
+est_a_mi = []
 
 #import pyentropy
 #for M in range(2,40,1):
-for M in range(2,80,4):
+#for M in range(2,80,4):
+#for M in range(2,30,4):
+#for M in [2,3,4,5,6,7,8,9,10,11]:
+for M in [2,3,11]:
 
     #1.89216274871  M=10
     #0.243915598515 M=4
@@ -77,6 +81,17 @@ for M in range(2,80,4):
     print M
     print mi
 
+    sigma_s=1
+    sigma_n=1
+    import analytical_exrxp as e
+    a=e.exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n,fs_Hz)
+    a_mi_persec = a[0]
+    ami_perbin = a_mi_persec / fs_Hz
+    #print "mi= %g "%( a_mi_persec / fs_Hz * nlen   ,)
+    print "mi= %g "%( ami_perbin    ,)
+
+    #error: it should be ttwice as large
+
 
     if 0:
         ts = exrxp.timesarr(nlen,fs_Hz)
@@ -91,10 +106,22 @@ for M in range(2,80,4):
 
     est_mi.append(mi)
     est_M.append(M)
+    est_a_mi.append(ami_perbin)
 
-import matplotlib.pyplot
-p1=matplotlib.pyplot.plot(est_M,est_mi)
-matplotlib.pyplot.show()
+
+import matplotlib.pyplot as pp
+p0=pp.plot(est_M[0],0.0)
+p1=pp.plot(est_M,est_mi)
+p2=pp.plot(est_M,est_a_mi)
+
+legend_handles=[p1,p2]
+labels=['est','analyt']
+#ca=['r','g','b','k','m','c','y']
+#pp.rcParams.update({'legend.fontsize': 8, 'legend.linewidth': 1})
+pp.gca().set_xlabel('M')
+pp.legend(labels)
+pp.title("trials: %d"%(ntr,) )
+pp.show()
     
         
 # scp root@134.213.57.138:~/exhdd/exhdd/u/matlab/m9-markov5/makelorresponse.m ..
