@@ -87,7 +87,7 @@ for M in [2,3,11]:
     mi = s.I()
     print M
     print mi
-
+t
     import analytical_exrxp as e
     a=e.exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n,fs_Hz)
     a_mi_persec = a[0]
