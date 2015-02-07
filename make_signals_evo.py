@@ -45,6 +45,9 @@ fs_Hz=1000.0 # Hz
 tau_n_msec = 1.0*100 # msec
 tau_s_msec = 5.0*100 # msec
 
+#test
+tau_n_msec = 1.0*100 # msec
+tau_s_msec = 1.0*100 # msec
 
 
 # sigma_s=10;sigma_n=2 #why faster growing by M ?
@@ -62,8 +65,8 @@ est_a_mi = []
 #for M in range(2,40,1):
 #for M in range(2,80,4):
 #for M in range(2,30,4):
-#for M in [2,3,4,5,6,7,8,9,10,11]:
-for M in [2,3,11]:
+for M in [2,3,4,5,6,7,8,9,10,11]:
+#for M in [2,3,11]:
 
 
     #1.89216274871  M=10
@@ -87,7 +90,7 @@ for M in [2,3,11]:
     mi = s.I()
     print M
     print mi
-t
+
     import analytical_exrxp as e
     a=e.exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n,fs_Hz)
     a_mi_persec = a[0]
