@@ -1,42 +1,48 @@
 import pyentropy
 
-def quantize_2d(z2d, M, uniform_code):
+#Two formats for the sample: TxN and LSN:
+#   LxSN:  Lx(S*Tr) = LST = L x Stim x Ntr = LxSxN = LSN
+#   Txn:   LT = LenTr = Time x Ntr = TxN = TN
+#SignalsSample_LT:
+
+def quantize_TxN(z_TxN, M, uniform_code):
     #z2d_reshaped=z2d.reshape(z2d.size)
     #z2d_reshaped_q,bin_bounds, bin_centers = pyentropy.quantise(z2d_reshaped, M, uniform='bins')
     #z2d_q = z2d_reshaped_q.reshape(z2d.shape)
     #z2d: # [nlen x ntr]
-    z2d=z2d.transpose()
-    z2d_shape=z2d.shape
+    z_NxT=z_TxN.transpose()
+    z_NxT_shape=z_NxT.shape
     #print z2d[0:10,0] # [ntr  x nlen ]
-    z2d_reshaped=z2d.reshape([z2d.size]) #straighted.  z2d.size=total elements
+    z_Arr=z_NxT.reshape([z_NxT.size]) #straighted.  z2d.size=total elements
     #print z2d_reshaped[0:10] #if not trsnsposed,  tr1,tr2,tr3,  tr1,tr2,tr3
 
-    z2d_reshaped_q,bin_bounds, bin_centers = pyentropy.quantise(z2d_reshaped, M, uniform=uniform_code)
-    z2d_q = z2d_reshaped_q.reshape(z2d_shape)
-    return z2d_q.transpose()
+    zq_Arr,bin_bounds, bin_centers = pyentropy.quantise(z_Arr, M, uniform=uniform_code)
+    zq_NxT = zq_Arr.reshape(z_NxT_shape)
+    return zq_NxT.transpose()
 
-def sliding(zq, L, step=1): #also step between L elements?
-    #zq: (nlen,ntr)
-    assert step==1
-    import numpy
-    ns = int(numpy.floor((zq.shape[0]-L+1)/step)) #only tested for step==1
+def sliding(zq_TxN, L, step=1, offset=0): #also step between L elements?
+    """ converts a TxN into LxSN """
+    #zq: (nlen,ntr) = (T,N)
+    #assert step==1
+    import numpy,math
+    ns = int(math.floor((zq_TxN.shape[0]-L+1)/step)) #only tested for step==1
     #print "ns=%d"%ns
-    ntr=zq.shape[1]
+    ntr=zq_TxN.shape[1]
     #zL=numpy.zeros((ns,ntr), type(zq[0,0]))
-    zL=numpy.zeros((L,ns*ntr), type(zq[0,0]))
+    z_LxSN=numpy.zeros((L,ns*ntr), type(zq_TxN[0,0]))
     #nta = numpy.zeros(nlen, type(zq[0,0]))
     nta = numpy.zeros(ns,int)
     #nl = zq[
-    start = 0 #argument: offset
-    ntrctr=0
+    word_start = offset #argument: offset
+    SN_ctr = 0 #The SN dimension is (Stim x Ntr), i.e, arrays of ntr repeated Stim (=ns) times.  Lx SN=Lx(Stim x Ntr)
     for i in range(ns):
-        a=zq[0+start:L+start,:]  # Lx30
-        zL[0:L,ntrctr+0:ntrctr+ntr] = a
+        a=zq_TxN[0+word_start:L+word_start,:]  # Lx30
+        z_LxSN[0:L,SN_ctr+0:SN_ctr+ntr] = a
         #start = start + 1   #todo: start=i
-        start = start + step  #todo: start=i*step
+        word_start = word_start + step  #todo: start=i*step
         nta[i] = ntr
-        ntrctr=ntrctr+ntr #todo: ntrctr = i*ntr
-    return zL,nta
+        SN_ctr=SN_ctr+ntr #todo: ntrctr = i*ntr
+    return z_LxSN,nta
 
 #import myshared
 import exrxp
@@ -88,7 +94,7 @@ for M in [2,3,4,5,6,7,8,9,10,11,15,20,30,50]:
     resp2d = z2d + numpy.tile(z0,[1,ntr])
     #print z2d.shape # nlen*ntr
 
-    z2d_q = quantize_2d(resp2d, M, 'sampling') #'bins')
+    z2d_q = quantize_TxN(resp2d, M, 'sampling') #'bins')
     #z2dqL,nta = sliding(z2d_q, L=2)
     #z2dqL,nta = sliding(z2d_q, L=1)
     z2dqL,nta = sliding(z2d_q, L=L)
