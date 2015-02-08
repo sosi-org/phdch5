@@ -56,16 +56,17 @@ nlen=1000
 #ntr=2;nlen=3
 
 fs_Hz=1000.0 # Hz
-tau_n_msec = 1.0*100 # msec
-tau_s_msec = 5.0*100 # msec
-
-#test
 tau_n_msec = 1.0*100/10 # msec
-tau_s_msec = 1.0*100/10 # msec
+tau_s_msec = 5.0*100/10 # msec
+
+print tau_s_msec,tau_n_msec
+#test
+#tau_n_msec = 1.0*100/10 # msec
+#tau_s_msec = 1.0*100/10 # msec
 
 
 # sigma_s=10;sigma_n=2 #why faster growing by M ?
-sigma_s=1
+sigma_s=3
 sigma_n=1
 
 #L=1 ---> Plateau.  L=2 ---> grows inf ly (bias?)
@@ -80,7 +81,7 @@ est_a_mi = []
 #for M in range(2,40,1):
 #for M in range(2,80,4):
 #for M in range(2,30,4):
-for M in [2,3,4,5,6,7,8,9,10,11,15,20,30,50]:
+for M in [2,3,5]: #[2,3,4,5,6,7,8,9,10,11,15,20,30,50,100]:
 #for M in [2,3,11]:
 
     #1.89216274871  M=10
@@ -135,16 +136,18 @@ for M in [2,3,4,5,6,7,8,9,10,11,15,20,30,50]:
 
 import matplotlib.pyplot as pp
 import myshared
+pp.rc('text', usetex=True)
 p0=pp.plot(est_M[0],0.0)
-p1=pp.plot(est_M,est_mi)
-p2=pp.plot(est_M,est_a_mi)
+p1=pp.plot(est_M,est_mi, label='est')
+p2=pp.plot(est_M,est_a_mi, label='analyt')
 
 legend_handles=[p1,p2]
-labels=['est','analyt']
+#labels=[None?,'est','analyt']
 #ca=['r','g','b','k','m','c','y']
 #pp.rcParams.update({'legend.fontsize': 8, 'legend.linewidth': 1})
-pp.gca().set_xlabel('M')
-pp.legend(labels, loc=myshared.LEGEND_CONST.lower_right)
+pp.gca().set_xlabel('M^2')
+#pp.legend(labels, loc=myshared.LEGEND_CONST.lower_right)
+pp.legend(loc=myshared.LEGEND_CONST.lower_right)
 pp.title("trials: %d"%(ntr,) )
 pp.show()
     
