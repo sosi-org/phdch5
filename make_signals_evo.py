@@ -4,10 +4,16 @@ def quantize_2d(z2d, M, uniform_code):
     #z2d_reshaped=z2d.reshape(z2d.size)
     #z2d_reshaped_q,bin_bounds, bin_centers = pyentropy.quantise(z2d_reshaped, M, uniform='bins')
     #z2d_q = z2d_reshaped_q.reshape(z2d.shape)
-    z2d_reshaped=z2d.reshape(z2d.size)
+    #z2d: # [nlen x ntr]
+    z2d=z2d.transpose()
+    z2d_shape=z2d.shape
+    #print z2d[0:10,0] # [ntr  x nlen ]
+    z2d_reshaped=z2d.reshape([z2d.size]) #straighted.  z2d.size=total elements
+    #print z2d_reshaped[0:10] #if not trsnsposed,  tr1,tr2,tr3,  tr1,tr2,tr3
+
     z2d_reshaped_q,bin_bounds, bin_centers = pyentropy.quantise(z2d_reshaped, M, uniform=uniform_code)
-    z2d_q = z2d_reshaped_q.reshape(z2d.shape)
-    return z2d_q
+    z2d_q = z2d_reshaped_q.reshape(z2d_shape)
+    return z2d_q.transpose()
 
 def sliding(zq, L, step=1): #also step between L elements?
     #zq: (nlen,ntr)
@@ -21,12 +27,13 @@ def sliding(zq, L, step=1): #also step between L elements?
     #nta = numpy.zeros(nlen, type(zq[0,0]))
     nta = numpy.zeros(ns,int)
     #nl = zq[
-    start = 0
+    start = 0 #argument: offset
     ntrctr=0
     for i in range(ns):
         a=zq[0+start:L+start,:]  # Lx30
         zL[0:L,ntrctr+0:ntrctr+ntr] = a
-        start = start + 1  #todo: start=i
+        #start = start + 1   #todo: start=i
+        start = start + step  #todo: start=i*step
         nta[i] = ntr
         ntrctr=ntrctr+ntr #todo: ntrctr = i*ntr
     return zL,nta
@@ -40,14 +47,15 @@ import exrxp
 ntr=100*10
 nlen=1000
 
+#ntr=2;nlen=3
 
 fs_Hz=1000.0 # Hz
 tau_n_msec = 1.0*100 # msec
 tau_s_msec = 5.0*100 # msec
 
 #test
-tau_n_msec = 1.0*100 # msec
-tau_s_msec = 1.0*100 # msec
+tau_n_msec = 1.0*100/10 # msec
+tau_s_msec = 1.0*100/10 # msec
 
 
 # sigma_s=10;sigma_n=2 #why faster growing by M ?
@@ -56,6 +64,7 @@ sigma_n=1
 
 #L=1 ---> Plateau.  L=2 ---> grows inf ly (bias?)
 
+L=2
 
 est_mi = []
 est_M = []
@@ -65,9 +74,8 @@ est_a_mi = []
 #for M in range(2,40,1):
 #for M in range(2,80,4):
 #for M in range(2,30,4):
-for M in [2,3,4,5,6,7,8,9,10,11]:
+for M in [2,3,4,5,6,7,8,9,10,11,15,20,30,50]:
 #for M in [2,3,11]:
-
 
     #1.89216274871  M=10
     #0.243915598515 M=4
@@ -81,13 +89,15 @@ for M in [2,3,4,5,6,7,8,9,10,11]:
     #print z2d.shape # nlen*ntr
 
     z2d_q = quantize_2d(resp2d, M, 'sampling') #'bins')
-    z2dqL,nta = sliding(z2d_q, L=2)
+    #z2dqL,nta = sliding(z2d_q, L=2)
     #z2dqL,nta = sliding(z2d_q, L=1)
+    z2dqL,nta = sliding(z2d_q, L=L)
+
     #import numpy
     from pyentropy import SortedDiscreteSystem
     s = SortedDiscreteSystem(z2dqL, (z2dqL.shape[0],M), len(nta), nta)
     s.calculate_entropies(method='qe', calc=['HX', 'HXY'])
-    mi = s.I()
+    mi = s.I() / L
     print M
     print mi
 
@@ -118,6 +128,7 @@ for M in [2,3,4,5,6,7,8,9,10,11]:
 
 
 import matplotlib.pyplot as pp
+import myshared
 p0=pp.plot(est_M[0],0.0)
 p1=pp.plot(est_M,est_mi)
 p2=pp.plot(est_M,est_a_mi)
@@ -127,7 +138,7 @@ labels=['est','analyt']
 #ca=['r','g','b','k','m','c','y']
 #pp.rcParams.update({'legend.fontsize': 8, 'legend.linewidth': 1})
 pp.gca().set_xlabel('M')
-pp.legend(labels)
+pp.legend(labels, loc=myshared.LEGEND_CONST.lower_right)
 pp.title("trials: %d"%(ntr,) )
 pp.show()
     
