@@ -1,14 +1,17 @@
 #!/usr/bin/python
-# A port of Marcelo A Montemurro's code into Python
+# A port of M.A.M.'s code into Python
 import numpy as np
 import sys
 
 VERBOSE = 0
+TEST = 0
+
 #decorators
 def test_tdd(f):
-    print "Testing function "+f.__name__+"()...",
-    f()
-    print "passed"
+    if TEST:
+        print "Testing function "+f.__name__+"()...",
+        f()
+        print "passed"
 
 def test_log(x):
     if VERBOSE:
