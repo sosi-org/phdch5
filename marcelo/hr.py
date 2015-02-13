@@ -1,11 +1,59 @@
+#!/usr/bin/python
+# A port of Marcelo A Montemurro's code into Python
 import numpy as np
 import sys
 
+VERBOSE = 0
+#decorators
+def test_tdd(f):
+    print "Testing function "+f.__name__+"()...",
+    f()
+    print "passed"
+
+def test_log(x):
+    if VERBOSE:
+        print x
+
+def range_shuffle(nta):
+    """%this function shuffles the index matrix for all stimulus conditions
+    :param nta:
+    :type nta: list #of int
+    :return: idx
+    :rtype:
+    """
+    #function idx=range_shuffle(nt);
+    m=max(nta) #??
+    ns=len(nta)
+    idx=np.zeros([ns,m],int) #np.zeros(ns,m);
+    for s in range(ns): #s=1:ns
+        #idx(s,1:nta(s))=randperm(nta(s));
+        #np.random.shuffle(arr)
+        #np.random.permutation(arr)
+        #idx[s,0:(nta[s]-1)] = np.random.permutation(range(nta[s]))
+        idx[s,0:nta[s]] = np.random.permutation(range(nta[s]))+1
+    return idx
+
+@test_tdd
+def test_range_shuffle():
+    nta=[4,3,10,1,0]
+    x=range_shuffle(nta)
+    #print x
+    #for i in range(x.shape[0]):
+    #    print sum(x[i,:]>0)
+    #print filter( lambda x: sum(x[i,:]>0), x )
+    nta_reproduced = [sum(x[i,:]>0) for i in range(x.shape[0])]
+    test_log( np.sort(nta_reproduced) )
+    test_log( np.sort(nta) )
+    assert all(np.sort(nta_reproduced) == np.sort(nta))
+
+exit(0)
+
+"""
 def hr(spk,nt,biastype):
     #function [h0]=hr(spk,nt,biastype)
-    """This function estimates the response entropy of a set of trials
-    The result is given in bits
-    The estimator implemented is chosen by biastype"""
+    #This function estimates the response entropy of a set of trials
+    #The result is given in bits
+    #The estimator implemented is chosen by biastype
 
     #global betac #???
     hc0=0
@@ -18,7 +66,7 @@ def hr(spk,nt,biastype):
     ntr=sum(nt) #%total number of trials
     ns=spk.shape[3] #size(spk,4); #ns=size(spk,4);
     range=range_shuffle(nt);
-    p=probr(spk,nt,range,1); *********
+    p=probr(spk,nt,range,1); #*********
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     #%Direct estimation
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -204,3 +252,9 @@ def hr(spk,nt,biastype):
 
 def test_hr():
     pass
+
+
+#why??
+#np.max([2,3,3.4])
+#Out[14]: 3.3999999999999999
+"""
