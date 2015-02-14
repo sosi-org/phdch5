@@ -51,8 +51,8 @@ def enum(*sequential, **named):
     enums['UnknownExcecption'] = Exception
     return type('Enum', (), enums)
 
-BiasType = enum("NAIVE0", "QE_THREEPOINT1", "NAIVE_CORRECTED2","PANZERI3","MONTEMURRO4","SADDLE5","SIMPS_QUAD6","BUB7","TYPE8","LATHAM")
-print BiasType.NAIVE0, BiasType.QE_THREEPOINT1, BiasType.NAIVE_CORRECTED2,BiasType.PANZERI3,BiasType.MONTEMURRO4,BiasType.SADDLE5,\
+BiasType = enum("NAIVE0", "QE1", "NAIVE_CORRECTED2","PANZERI3","MONTEMURRO4","SADDLE5","SIMPS_QUAD6","BUB7","TYPE8","LATHAM")
+print BiasType.NAIVE0, BiasType.QE1, BiasType.NAIVE_CORRECTED2,BiasType.PANZERI3,BiasType.MONTEMURRO4,BiasType.SADDLE5,\
 BiasType.SIMPS_QUAD6,BiasType.BUB7,BiasType.TYPE8,BiasType.LATHAM
 
 
@@ -344,7 +344,7 @@ def hr(spk,nta,biastype):
         h0=hc0
         return h0
 
-    elif biastype==BiasType.QE_THREEPOINT1:
+    elif biastype==BiasType.QE1:
         # case 1
         #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         #%This is the 3 point extrapolation taking 1/4, 1/2 and 1/1 of the trials
@@ -596,12 +596,12 @@ def test_hr_distr():
     M=5
     NTA = [100,100,100] # NTA= [10,20,30]  #[1000,1000,10]
     a=[]
-    for tr in range(10):
+    for tr in range(20):
         spk,L,nta,ns = _test_data_spk_rand(L=2,nta_arr=NTA,M=M)
         h=hr(spk,nta,biastype=BiasType.NAIVE0)
         #print h - np.log2(M)*L
         a.append(h)
-    print np.mean(a) - np.log2(M)*L , '+-', np.std(a)
+    print np.mean(a) - np.log2(M)*L,',' , '+-', np.std(a)
     #What does the distribution look like?
 
 @test_tdd
@@ -609,17 +609,15 @@ def test_hr_distr_QE():
     M=5
     NTA = [100,100,100] # NTA= [10,20,30]  #[1000,1000,10]
     a=[]
-    for tr in range(10):
+    for tr in range(20):
         spk,L,nta,ns = _test_data_spk_rand(L=2,nta_arr=NTA,M=M)
-        h=hr(spk,nta,biastype=BiasType.QE_THREEPOINT1)
-        print 'H', h - np.log2(M)*L
+        h=hr(spk,nta,biastype=BiasType.QE1)
+        #print 'H', h - np.log2(M)*L
         a.append(h)
-    print np.mean(a) - np.log2(M)*L , '+-', np.std(a)
+    print np.mean(a) - np.log2(M)*L,',' , '+-', np.std(a)
     #What does the distribution look like?
 
 
 #why??
 #np.max([2,3,3.4])
 #Out[14]: 3.3999999999999999
-
-
