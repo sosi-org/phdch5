@@ -212,7 +212,7 @@ def probr(spk,nta,r,f, return_count=False):
     #wi=1+trials .dot(np.power(M,range(L))) #'; tranpose
     # trials: 2dim
     wi=1+trials .dot(B)
-    print 'min=',min(min(wi))
+    #print 'min=',min(min(wi))
     #assert min(min(wi))>=1
     #assert max(max(wi))>=1
 
@@ -235,16 +235,20 @@ def probr(spk,nta,r,f, return_count=False):
     #edges = np.array(range(1+int(EPS+math.pow(M,L))))+EPS #bin edges, including the rightmost edge,
     #edges = np.array(range(0,1+int(EPS+math.pow(M,L))))+EPS #bin edges, including the rightmost edge,
     maxrange = 1+(BIG_EPS+math.pow(M,L))
-    print max(max(wi)),maxrange # 4,5.0  or 25 26.0
+    #print max(max(wi)),maxrange # 4,5.0  or 25 26.0 #25 26.000001
     edges = np.array(range(0,int(maxrange)))+0.1 #EPS does not work here!! #bin edges, including the rightmost edge,
     #If you start the range from 1, items will be missing
-    print edges
-    print _debug_show_table2(wi.flatten()) #
+
+    #print edges
+    #print _debug_show_table2(wi.flatten()) #
+
     count,e2 = np.histogram(wi.flatten(), edges) #
     assert sum(count) == sum(nta)
-    print count.astype(COUNT_TYPE)
-    print sum(count.astype(COUNT_TYPE)), sum(nta)
-    print '======',sum(nta)
+
+    #print count.astype(COUNT_TYPE)
+    #print sum(count.astype(COUNT_TYPE)), sum(nta)
+    #print '======',sum(nta)
+
     #print count.shape # (3,)
     #print e2 #???
     #print wi
@@ -543,6 +547,17 @@ def test_hr_probr():
     #4.6389075846 bit!
     #assert abs(h_R) < EPS_PROB*100
 
+@test_tdd
+def test_hr_distr():
+    M=5
+    NTA = [1000,1000,1000] #[10,20,30]
+    a=[]
+    for tr in range(10):
+        spk,L,nta,ns = _test_data_spk_rand(L=2,nta_arr=NTA,M=M)
+        h=hr(spk,nta,biastype=0)
+        print h - np.log2(M)*L
+        a.append(h)
+    print np.mean(a) - np.log2(M)*L , '+-', np.std(a)
 
 
 #why??
