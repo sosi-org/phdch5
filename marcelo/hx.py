@@ -11,6 +11,11 @@ import sys
 TEST = 1
 DEEP_TEST_DATA = 1 #test all elements of arrays
 
+if __name__ == "__main__":
+    TEST=1
+else:
+    TEST=0
+
 COUNT_TYPE = np.int8 # np.int16  #number of trials
 RESP_TYPE = np.int8
 PROB_TYPE = np.float32 #or 64?
@@ -52,8 +57,7 @@ def enum(*sequential, **named):
     return type('Enum', (), enums)
 
 BiasType = enum("NAIVE0", "QE1", "NAIVE_CORRECTED2","PANZERI3","MONTEMURRO4","SADDLE5","SIMPS_QUAD6","BUB7","TYPE8","LATHAM")
-print BiasType.NAIVE0, BiasType.QE1, BiasType.NAIVE_CORRECTED2,BiasType.PANZERI3,BiasType.MONTEMURRO4,BiasType.SADDLE5,\
-BiasType.SIMPS_QUAD6,BiasType.BUB7,BiasType.TYPE8,BiasType.LATHAM
+#print BiasType.NAIVE0, BiasType.QE1, BiasType.NAIVE_CORRECTED2,BiasType.PANZERI3,BiasType.MONTEMURRO4,BiasType.SADDLE5, BiasType.SIMPS_QUAD6,BiasType.BUB7,BiasType.TYPE8,BiasType.LATHAM
 
 
 
@@ -87,13 +91,15 @@ def range_frac(range1,nta,f,k):
     #todo: some trials are removed in QE
     new_nta = nta/f
     assert len(new_nta)==len(nta)
+    #del nta
     m=max(new_nta) #m=max(new_nt);
     #r=zeros(ns,m);
     r=np.zeros([ns,m],int) #todo: int -> ?
     #for s=1:ns
     for s in range(ns):
         #r(s,1:new_nt(s))=range1(s,1+(k-1)*new_nt(s):k*new_nt(s));
-        r[s,0:nta[s]] = range1[s, range((k-1)*new_nta[s], k*new_nta[s])  ] #todo: not tested
+        #print new_nta[s],"=",k
+        r[s,0:new_nta[s]] = range1[s, range((k-1)*new_nta[s], k*new_nta[s])  ] #todo: not tested
     #end
     return r
 
@@ -525,7 +531,7 @@ def hr(spk,nta,biastype):
 
 
 def _test_data_spk_singleval(L,nta_arr, value):
-    L=2; nta=np.array(nta_arr,COUNT_TYPE);ns=len(nta)
+    L=L; nta=np.array(nta_arr,COUNT_TYPE);ns=len(nta)
     _checktype_nta(nta, ns)
     spk = np.zeros([1,L,max(nta),ns], RESP_TYPE)
     for i in range(1):
@@ -699,7 +705,6 @@ def probrs(spk,r,s,M, return_count=False):
     #    #    spkt=spkt';
     #    trials=spkt.transpose() #trials=spkt';   #%trials=(reshape(spkt,L,[]))';
     trials=spkt #no need to transpose. why??
-
 
     #p=np.zeros([1,M^L],...)  #p=zeros(1,M^L);
     #count=zeros([M^L,1],...)
