@@ -980,7 +980,7 @@ def H_from_p(p):
 
 @test_tdd
 def test_MutualInformation_distr_twobiases():
-    L=2
+    L=1
     #PA=[0.1,0.2,0.7]
     #PA=[1.0/3,1.0/3,1.0/3]
     NS=2
