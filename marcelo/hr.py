@@ -26,7 +26,8 @@ PROB_TYPE = np.float32 #or 64?
 #print PROB_TYPE(sys.float_info.epsilon)
 #EPS_PROB =PROB_TYPE(EPS)
 #EPS_PROB =PROB_TYPE(0.00000000001)
-EPS_PROB =PROB_TYPE(1e-11)
+EPS_PROB =PROB_TYPE(1e-11)  #To be used inside the log function
+EPS_LOG =PROB_TYPE(1e-11)
 BIG_EPS = 1e-6  #for integer works and histogram
 #needed: integer histogram
 
@@ -66,7 +67,7 @@ def range_shuffle(nta):
     #function idx=range_shuffle(nt);
     m=max(nta) #??
     ns=len(nta)
-    idx=np.zeros([ns,m],int) #np.zeros(ns,m);
+    idx=np.zeros([ns,m],int) #np.zeros(ns,m); #todo: int type
     for s in range(ns): #s=1:ns
         #idx(s,1:nta(s))=randperm(nta(s));
         #np.random.shuffle(arr)
@@ -75,6 +76,32 @@ def range_shuffle(nta):
         idx[s,0:nta[s]] = np.random.permutation(range(nta[s]))+1
     #end
     return idx
+
+def range_frac(range1,nta,f,k):
+    """This function extratcs subranges from the shuffled index matrix"""
+    #todo: not tested
+    #function r=range_frac(range1,nta,f,k);
+    ns=len(nta)
+    #new_nt=floor(nta/f);
+    assert type(f) is int
+    #todo: some trials are removed in QE
+    new_nta = nta/f
+    assert len(new_nta)==len(nta)
+    m=max(new_nta) #m=max(new_nt);
+    #r=zeros(ns,m);
+    r=np.zeros([ns,m],int) #todo: int -> ?
+    #for s=1:ns
+    for s in range(ns):
+        #r(s,1:new_nt(s))=range1(s,1+(k-1)*new_nt(s):k*new_nt(s));
+        r[s,0:nta[s]] = range1[s, range((k-1)*new_nta[s], k*new_nta[s])  ] #todo: not tested
+    #end
+    return r
+
+def lagrange3(x,y,xx):
+    #todo: not tested
+    #function px=lagrange3(x,y,xx)
+    #   px=(xx-x(2))*(xx-x(3))/((x(1)-x(2))*(x(1)-x(3)))*y(1)+(xx-x(1))*(xx-x(3))/((x(2)-x(1))*(x(2)-x(3)))*y(2)+(xx-x(1))*(xx-x(2))/((x(3)-x(1))*(x(3)-x(2)))*y(3);
+    return (xx-x[1])*(xx-x[2])/((x[0]-x[1])*(x[0]-x[2]))*y[0]+(xx-x[0])*(xx-x[2])/((x[1]-x[0])*(x[1]-x[2]))*y[1]+(xx-x[0])*(xx-x[1])/((x[2]-x[0])*(x[2]-x[1]))*y[2]
 
 #def _debug_show_table(s1, rng):
 #    rng=set(s1)
@@ -233,8 +260,9 @@ def probr(spk,nta,r,f, return_count=False):
 
     #print _debug_show_table(np.sort(wi.flatten()),range(100,200)) #
     #print _debug_show_table2(wi.flatten()) #
+    #print new_nta
     #print wi.shape  # 6x1   NTR x
-    assert wi.shape[0] == sum(nta)
+    assert wi.shape[0] == sum(new_nta)
     assert wi.shape[1] == 1
     #print math.pow(M,L)
     #print max(max(wi))-1,math.pow(M,L)
@@ -257,7 +285,7 @@ def probr(spk,nta,r,f, return_count=False):
     #print _debug_show_table2(wi.flatten()) #
     #todo: write an integer historam in C (or use a library)
     count,e2 = np.histogram(wi.flatten(), edges) #
-    assert sum(count) == sum(nta)
+    assert sum(count) == sum(new_nta)
 
     #print count.astype(COUNT_TYPE)
     #print sum(count.astype(COUNT_TYPE)), sum(nta)
@@ -299,64 +327,64 @@ def hr(spk,nta,biastype):
     ntr=sum(nta) #%total number of trials
     ns=spk.shape[3] #size(spk,4); #ns=size(spk,4);
     #todo: Don't shuffle in the Naive estiamtion
-    range1=range_shuffle(nta);
+    range1=range_shuffle(nta)
     #print range
     #print range
-    p=probr(spk,nta,range1,1); #*********
+    p=probr(spk,nta,range1,1) #*********
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     #%Direct estimation
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     #print "-------"
     #print p
-    hc0=-sum( p * np.log2(p + EPS_PROB)) #hc0=-sum((p) .* np.log2(p+ eps));
+    hc0=-sum( p * np.log2(p + EPS_LOG)) #hc0=-sum((p) .* np.log2(p+ eps));
     if biastype==BiasType.NAIVE0:
         #switch biastype
         #case 0
-        bias=0;
-        h0=hc0;
+        bias=0
+        h0=hc0
         return h0
-"""
-    elif biastype==1:
+
+    elif biastype==BiasType.QE_THREEPOINT1:
         # case 1
         #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         #%This is the 3 point extrapolation taking 1/4, 1/2 and 1/1 of the trials
         #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         #   %range=range_shuffle(nt);
-        r21=range_frac(range,nta,2,1);
-        r22=range_frac(range,nta,2,2);
-        r41=range_frac(range,nta,4,1);
-        r42=range_frac(range,nta,4,2);
-        r43=range_frac(range,nta,4,3);
-        r44=range_frac(range,nta,4,4);
+        r21=range_frac(range1,nta,2,1)
+        r22=range_frac(range1,nta,2,2)
+        r41=range_frac(range1,nta,4,1)
+        r42=range_frac(range1,nta,4,2)
+        r43=range_frac(range1,nta,4,3)
+        r44=range_frac(range1,nta,4,4)
+
+        p21=probr(spk,nta,r21,2)
+        p22=probr(spk,nta,r22,2)
+        p41=probr(spk,nta,r41,4)
+        p42=probr(spk,nta,r42,4)
+        p43=probr(spk,nta,r43,4)
+        p44=probr(spk,nta,r44,4)
         
-        p21=probr(spk,nta,r21,2);
-        p22=probr(spk,nta,r22,2);
-        p41=probr(spk,nta,r41,4);
-        p42=probr(spk,nta,r42,4);
-        p43=probr(spk,nta,r43,4);
-        p44=probr(spk,nta,r44,4);
+        h21=-sum(p21*np.log2(p21+EPS_LOG))
+        h22=-sum(p22*np.log2(p22+EPS_LOG))
+        h41=-sum(p41*np.log2(p41+EPS_LOG))
+        h42=-sum(p42*np.log2(p42+EPS_LOG))
+        h43=-sum(p43*np.log2(p43+EPS_LOG))
+        h44=-sum(p44*np.log2(p44+EPS_LOG))
+        h4=(h41+h42+h43+h44)/4
+        h2=(h21+h22)/2
         
-        h21=-sum(p21*np.log2(p21+EPS));
-        h22=-sum(p22*np.log2(p22+EPS));
-        h41=-sum(p41*np.log2(p41+EPS));
-        h42=-sum(p42*np.log2(p42+EPS));
-        h43=-sum(p43*np.log2(p43+EPS));
-        h44=-sum(p44*np.log2(p44+EPS));
-        h4=(h41+h42+h43+h44)/4;
-        h2=(h21+h22)/2;
+        n1=sum(nta)
+        n2=sum(np.floor(nta/2))
+        n4=sum(np.floor(nta/4))
         
-        n1=sum(nta);
-        n2=sum(np.floor(nta/2));
-        n4=sum(np.floor(nta/4));
-        
-        h0=lagrange3([1.0/n4 1.0/n2 1.0/n1],[h4 h2 hc0],0);
+        h0=lagrange3([1.0/n4, 1.0/n2, 1.0/n1],[h4,h2,hc0],0)
         #%h0=(8*hc0-6*h2+h4)/3; %parabolic extrapolation
         #%h0=(-h2*ntr2^2*(ntr-ntr4)+h4*ntr4^2*(ntr-ntr4)+hd*ntr^2*(ntr2-ntr4))/((ntr-ntr2)*(ntr-ntr4)*(ntr2-ntr4));
         
         #%hst=(4*hd-h21-h22)/2; %linear extrapolation
         return h0
 
-
+"""
 
     elif biastype==2:
         #case 2
@@ -398,8 +426,8 @@ def hr(spk,nta,biastype):
         r22=idx(ntr/2+1:end);
         p21=probr(spk,r21,M);
         p22=probr(spk,r22,M);
-        h21=-sum(p21.*log2(p21+EPS));
-        h22=-sum(p22.*log2(p22+EPS));
+        h21=-sum(p21.*log2(p21+EPS_LOG));
+        h22=-sum(p22.*log2(p22+EPS_LOG));
         bias0=(sum(p>EPS)-1)/(2*ntr*ns*log(2));
         bias1=(sum(p21>EPS)-1)/(ntr*ns*log(2));
         bias2=(sum(p22>EPS)-1)/(ntr*ns*log(2));
@@ -431,8 +459,8 @@ def hr(spk,nta,biastype):
         p21=probr(spk,nta,r21,2);
         p22=probr(spk,nta,r22,2);
         
-        h21=-sum(p21.*log2(p21+EPS));
-        h22=-sum(p22.*log2(p22+EPS));
+        h21=-sum(p21.*log2(p21+EPS_LOG));
+        h22=-sum(p22.*log2(p22+EPS_LOG));
         h2=(h21+h22)/2;
         n1=sum(nta);
         n2=sum(floor(nta/2));
@@ -482,7 +510,7 @@ def hr(spk,nta,biastype):
         
 #%error estimation, Latham's
 #%N=ntr;
-#%err=sqrt((sum(p.*log2(p+eps).^2)-(hd*L)^2)/(L*N));
+#%err=sqrt((sum(p.*log2(p+EPS_LOG).^2)-(hd*L)^2)/(L*N));
 """
 
 
@@ -566,12 +594,25 @@ def test_hr_probr():
 @test_tdd
 def test_hr_distr():
     M=5
-    NTA = [1000,1000,1000] # NTA= [10,20,30]  #[1000,1000,10]
+    NTA = [100,100,100] # NTA= [10,20,30]  #[1000,1000,10]
     a=[]
     for tr in range(10):
         spk,L,nta,ns = _test_data_spk_rand(L=2,nta_arr=NTA,M=M)
         h=hr(spk,nta,biastype=BiasType.NAIVE0)
         #print h - np.log2(M)*L
+        a.append(h)
+    print np.mean(a) - np.log2(M)*L , '+-', np.std(a)
+    #What does the distribution look like?
+
+@test_tdd
+def test_hr_distr_QE():
+    M=5
+    NTA = [100,100,100] # NTA= [10,20,30]  #[1000,1000,10]
+    a=[]
+    for tr in range(10):
+        spk,L,nta,ns = _test_data_spk_rand(L=2,nta_arr=NTA,M=M)
+        h=hr(spk,nta,biastype=BiasType.QE_THREEPOINT1)
+        print 'H', h - np.log2(M)*L
         a.append(h)
     print np.mean(a) - np.log2(M)*L , '+-', np.std(a)
     #What does the distribution look like?
