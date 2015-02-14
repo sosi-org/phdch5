@@ -34,7 +34,7 @@ BIG_EPS = 1e-6  #for integer works and histogram
 #decorators
 def test_tdd(f):
     if TEST:
-        print "Testing function "+f.__name__+"()...",
+        print "Testing function "+f.__name__+"()..."
         f()
         print "passed"
 
@@ -137,7 +137,7 @@ def _checktype_spk1LNS(spk, nta=None):
     #print type(spk[0,0,0,0]) #int64?!
     assert type(spk[0,0,0,0]) is RESP_TYPE #np.int8 #int
     ns=spk.shape[4-1] #ns=size(spk,4);
-    ntr=spk.shape[3-1] #ntr=size(spk,3);
+    maxntr=spk.shape[3-1] #ntr=size(spk,3);
     L=spk.shape[2-1] #size(spk,2);
     if DEEP_TEST_DATA:
         M=max(spk.flatten())+1 #M=max(reshape(spk,1,[]))+1;
@@ -152,8 +152,10 @@ def _checktype_spk1LNS(spk, nta=None):
             for l in range(L):
                 #for nt in range(nta):
                     for s in range(ns):
-                        assert (spk[i,l,ntr:nta[s],s] == 0)
-                        assert sum(abs(spk[i,l,ntr:nta[s],s])) == 0
+                        #assert (spk[i,l,ntr:nta[s],s] == 0)
+                        #assert sum(abs(spk[i,l,ntr:nta[s],s])) == 0
+                        #assert (spk[i,l,nta[s]:maxntr,s] == 0)
+                        assert sum(abs(spk[i,l,nta[s]:maxntr,s])) == 0
 
 def _checktype_nta(nta, ns):
     #assert type(nta) is np.ndarray or type(nta) is list
@@ -317,12 +319,12 @@ def hr(spk,nta,biastype):
     :type biastype: BiasType
     """
     #global betac #???
-    hc0=0
-    hc1=0
-    hc2=0
-    hc3=0
-    hc4=0
-    hc5=0
+    #hc0=0
+    #hc1=0
+    #hc2=0
+    #hc3=0
+    #hc4=0
+    #hc5=0
     L=spk.shape[1] #L=size(spk,2)
     ntr=sum(nta) #%total number of trials
     ns=spk.shape[3] #size(spk,4); #ns=size(spk,4);
@@ -527,7 +529,7 @@ def _test_data_spk_singleval(L,nta_arr, value):
     return spk,L,nta,ns
 
 def _test_data_spk_rand(L,nta_arr, M):
-    L=2; nta=np.array(nta_arr,COUNT_TYPE);ns=len(nta)
+    nta=np.array(nta_arr,COUNT_TYPE);ns=len(nta)
     _checktype_nta(nta, ns)
     #spk = np.zeros([1,L,len(nta),ns], np.int8)
     spk = np.zeros([1,L,max(nta),ns], RESP_TYPE)
@@ -538,6 +540,39 @@ def _test_data_spk_rand(L,nta_arr, M):
                 for tr in range(nta[s]):
                     spk[i,l,tr,s] = RESP_TYPE(np.random.random_integers(0,M-1))
                     #M=max(spk.flatten())+1 ==> between [0,M-1]
+    return spk,L,nta,ns
+
+
+def _test_data_spk_plain(pa,L,nta_arr):
+    M=len(pa)
+    nta=np.array(nta_arr,COUNT_TYPE);ns=len(nta)
+    _checktype_nta(nta, ns)
+    spk = np.zeros([1,L,max(nta),ns], RESP_TYPE)
+    for i in range(1):
+        for l in range(L):
+            for s in range(ns):
+                for tr in range(nta[s]):
+                    #spk[i,l,tr,s] = RESP_TYPE(np.random.choice(range(M),p=pa))
+                    if np.random.random_integers(0,1)==0:
+                        R = 1 # np.random.choice(range(M),p=pa)
+                    else:
+                        R = 0 #s
+                    spk[i,l,tr,s] = RESP_TYPE(R)
+
+
+    return spk,L,nta,ns
+
+def _test_data_spk_rand_pa(pa,L,nta_arr, M):
+    #todo: based on _test_data_spk_rand
+    nta=np.array(nta_arr,COUNT_TYPE);ns=len(nta)
+    _checktype_nta(nta, ns)
+    spk = np.zeros([1,L,max(nta),ns], RESP_TYPE)
+    for i in range(1):
+        for l in range(L):
+            for s in range(ns):
+                for tr in range(nta[s]):
+                    spk[i,l,tr,s] = 0 #RESP_TYPE(np.random.random_integers(0,M-1))***
+                    raise Exception("Not implemented")
     return spk,L,nta,ns
 
 @test_tdd
@@ -621,3 +656,373 @@ def test_hr_distr_QE():
 #why??
 #np.max([2,3,3.4])
 #Out[14]: 3.3999999999999999
+
+
+###############
+#   H(R|S)    #
+###############
+
+def probrs(spk,r,s,M, return_count=False):
+    #function p=probrs(spk,r,s,M)
+    """this function works with the static version
+    f is the factor that divides the number of trials to use"""
+    ntr=len(r)
+
+    ns=spk.shape[4-1]
+    L=spk.shape[2-1]
+
+    #ntr=length(r);
+    #ns=size(spk,4);
+    #L=size(spk,2);
+    #spkt=squeeze(spk(1,:,r,s));
+    #print spk.shape
+    if False:
+        print r #[1,2,3,...,100]
+        print s,len(r) #1
+        print spk.shape
+        print spk[0,:,r-1,s-1].shape
+        print (spk[0,:,r-1,s-1]).shape #100,2 ??
+    #spkt=spk[0,:,r-1,s-1].squeeze([0,3])
+    spkt=spk[0,:,r-1,s-1] #no need???? #why ?? (100 x 2)
+
+    #    #if L==1:
+    #    #    spkt=spkt';
+    #    trials=spkt.transpose() #trials=spkt';   #%trials=(reshape(spkt,L,[]))';
+    trials=spkt #no need to transpose. why??
+
+
+    #p=np.zeros([1,M^L],...)  #p=zeros(1,M^L);
+    #count=zeros([M^L,1],...)
+    #wi=1+trials*(M.^[0:L-1])';
+    B = np.power(M,np.array(range(L)).reshape([L,1]))  #'; tranpose
+    if False:
+        print trials.shape
+        print B.shape
+    wi=1+trials.dot(B)
+
+    #count=histc(wi,[1:M^L+eps]);
+    maxrange = int(BIG_EPS+math.pow(M,L))
+    edges = np.array(range(0,maxrange+1)) + 0.1
+    count,e2 = np.histogram(wi.flatten(), edges) #
+    #p=(count'/sum(count));
+    p=count / PROB_TYPE(sum(count))
+    if return_count:
+        count=count.astype(COUNT_TYPE)
+        return p,count
+    else:
+        return p
+
+def hrs(spk,nta,biastype):
+    #function [h0]=hrs(spk,nt,biastype)
+    """It will estimate the entropy of a binary chain giving the result in bits per bin"""
+    #%trials=squeeze(spk(1,:,:))';
+
+    _checktype_spk1LNS(spk,nta)
+
+    #%Bias correction
+
+    #global betac  #todo: ???
+    #hc0=0
+    #hc1=0
+    #hc2=0
+    #hc3=0
+    #hc4=0
+    #hc5=0
+
+    #%ntr=size(spk,3);
+    #ns=size(spk,4);
+    #L=size(spk,2);
+    h0=0
+    err=0
+
+    L=spk.shape[1]
+    ns=spk.shape[3]
+
+
+
+    #M=1+max(reshape(spk,1,[]));
+    M=1+max(spk.flatten())
+    if M==1:
+        M=2
+    #end
+
+
+
+    #for t=1:ns  #%over all stimulus conditions
+    for t0 in range(0,ns):
+        #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        #%Direct estimation
+        #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        ntr=nta[t0] #ntr=nt(t);
+        #%trials=(squeeze(spk(1,:,:,t)))'; %trials set for current stimulus condition
+        #prs=probrs(spk,[1:ntr],t,M);  %it uses the same probr functions as Hr does!
+        prs = probrs(spk,np.array(range(1,ntr+1)).astype(int),t0+1,M) #%it uses the same probr functions as Hr does!
+
+        #hdt=-sum(prs.*log2(prs+eps))*nt(t);
+        hdt = -sum(prs * np.log2(prs+EPS_LOG))*nta[t0]
+
+
+
+        if biastype==0:
+            #case 0
+            bias=0
+            h0 += hdt
+        elif biastype==1:
+        #case 1
+            #%This is the 3 point extrapolation taking 1/4, 1/2 and 1/1 of the trials
+            #%idx=randperm(ntr); %it performs a random permutation of the indeces to trials
+            #%divide in ranges
+            #idx=randperm(ntr);
+            idx=np.random.permutation(range(ntr))+1 #idx=randperm(ntr);******
+            ntr2=int(math.floor(ntr/2))
+            ntr4=int(math.floor(ntr/4))
+            r21=idx[range(ntr2)] #r21=idx(1:ntr2);
+
+            # (i,j) ---> range(i-1,j)
+            #r22=idx(ntr2+1:2*ntr2);
+            r22=idx[range(ntr2+1-1,2*ntr2)]
+
+            r41=idx[range(ntr4)] #r41=idx(1:ntr4);
+            r42=idx[range(ntr4,2*ntr4)]  #r42=idx(ntr4+1:2*ntr4);
+            r43=idx[range(2*ntr4,3*ntr4)] #r43=idx(2*ntr4+1:3*ntr4);
+            r44=idx[range(3*ntr4,4*ntr4)] #r44=idx(3*ntr4+1:4*ntr4);
+
+            p21=probrs(spk,r21,t0+1,M)
+            p22=probrs(spk,r22,t0+1,M)
+            p41=probrs(spk,r41,t0+1,M)
+            p42=probrs(spk,r42,t0+1,M)
+            p43=probrs(spk,r43,t0+1,M)
+            p44=probrs(spk,r44,t0+1,M)
+            h21=-sum(p21*np.log2(p21+EPS_LOG))
+            h22=-sum(p22*np.log2(p22+EPS_LOG))
+            h41=-sum(p41*np.log2(p41+EPS_LOG))
+            h42=-sum(p42*np.log2(p42+EPS_LOG))
+            h43=-sum(p43*np.log2(p43+EPS_LOG))
+            h44=-sum(p44*np.log2(p44+EPS_LOG))
+            h4=nta[t0]*(h41+h42+h43+h44)/4.0
+            h2=nta[t0]*(h21+h22)/2.0
+
+            #h0=h0+lagrange3([1/ntr4 1/ntr2 1/ntr],[h4 h2 hdt],0);
+            h0 += lagrange3([1.0/ntr4, 1.0/ntr2, 1.0/ntr],[h4, h2, hdt],0)
+            #%h0=h0+(8*hdt-6*h2+h4)/3;
+            #%hs1=hs1+(-h2*ntr2^2*(ntr-ntr4)+h4*ntr4^2*(ntr-ntr4)+hdt*ntr^2*(ntr2-ntr4))/((ntr-ntr2)*(ntr-ntr4)*(ntr2-ntr4));
+            #%hst=hst+(4*hdt-h21-h22)/2;
+
+        elif  biastype==2:
+            #case 2
+            #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            #%Naive
+            #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            bias0=(sum(prs>EPS_PROB)-1)/(2*nta[t0]*np.log(2.0))
+            h0 += hdt+bias0*nta[t0] #h0=h0+hdt+bias0*nt(t);
+
+        """
+            case 3
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %Panzeri
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            R = bayescount(nt(t),prs);
+            bias = (R-1);
+            h0=h0+hdt+nt(t)*bias/((2*nt(t)*log(2)));
+
+            case 4
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %Montemurro
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            idx=randperm(ntr); %it performs a random permutation of the indeces to trials
+            %divide in ranges
+            ntr2=round(ntr/2);
+            ntr4=round(ntr/4);
+            r21=idx(1:ntr2);
+            r22=idx(ntr2+1:end);
+            r41=idx(1:ntr4);
+            r42=idx(ntr4+1:ntr2);
+            r43=idx(ntr2+1:3*ntr4);
+            r44=idx(3*ntr4+1:end);
+
+            p21=probrs(spk,r21,t);
+            p22=probrs(spk,r22,t);
+            h21=-sum(p21.*log2(p21+eps));
+            h22=-sum(p22.*log2(p22+eps));
+
+            bias0=(sum(prs>eps)-1)/(2*ntr*log(2));
+            bias1=(sum(p21>eps)-1)/(ntr*log(2));
+            bias2=(sum(p22>eps)-1)/(ntr*log(2));
+            h21=h21+bias1;
+            h22=h22+bias2;
+            h2=(h21+h22)/2;
+            h00=hdt+bias0;
+            %   h0=h0+(4*h00-h21-h22)/2;
+            h0=h0+lagrange2([1/ntr2 1/ntr],[h2 h00],0);
+
+            case 5
+            %Nemmenman
+            %first recover absolute freqs
+            n=round(prs*nt(t));
+            [hnemt]=saddleentr3(n);
+            h0=h0+hnemt*nt(t);
+
+            case 6
+            %Nemmenman
+            %first recover absolute freqs
+            n=round(prs*nt(t));
+            K=M^L;
+            [hnemt]=simps_quad(n,betac(K,:));
+            h0=h0+hnemt*nt(t);
+
+            case 8
+            ntr=nt(t);
+            idx=randperm(ntr);
+            ntr2=floor(ntr/2);
+            r21=idx(1:ntr2);
+            r22=idx(ntr2+1:2*ntr2);
+
+            p21=probrs(spk,r21,t,M);
+            p22=probrs(spk,r22,t,M);
+            h21=-sum(p21.*log2(p21+eps));
+            h22=-sum(p22.*log2(p22+eps));
+            h2=nt(t)*(h21+h22)/2;
+            h0=h0+lagrange2([1/ntr2 1/ntr],[h2 hdt],0);
+            %h0=h0+(8*hdt-6*h2+h4)/3;
+            %hs1=hs1+(-h2*ntr2^2*(ntr-ntr4)+h4*ntr4^2*(ntr-ntr4)+hdt*ntr^2*(ntr2-ntr4))/((ntr-ntr2)*(ntr-ntr4)*(ntr2-ntr4));
+
+
+            % case 7
+            % lin_vec=[1:1:ntr];
+            % a_vec(1)=0;
+            % a_vec(2:1:ntr+1) = [-(lin_vec/ntr).*log(lin_vec/ntr)];
+            % clear lin_vec;
+            % [bias_value,var_bound]=bub_bv_func(a_vec,prs,0); % this provide things in nats
+            % clear a_vec;
+            % bias_value=bias_value/log(2);
+            % %var_bound=var_bound/(log(2)*log(2));
+            % h0=h0+hdt-bias_value;
+            %
+            % case 8
+            %
+            % N=ntr;
+            % R=length(prs); % R is the size of the response space - if you have not defined it yet, it could be determined from the size of the probability vector as I did on the left
+            % lin_vec=[1:1:N];
+            % a_me_vec(1)=0;
+            % a_me_vec(2:1:N+1) = [-(lin_vec/N).*log(lin_vec/N)];
+            % a_mm_vec(1) = -1/(2*N*R);
+            % a_mm_vec(2:1:N+1) = [(-(lin_vec/N).*log(lin_vec/N)) + (1-(1/R))/(2*N) ];
+            % clear lin_vec;
+            % [bias_value_me,var_bound_me]=bub_bv_func(a_me_vec,prs,0); % this provide things in nats
+            % [bias_value_mm,var_bound_mm]=bub_bv_func(a_mm_vec,prs,0); % this provide things in nats
+            % clear a_me_vec,a_mm_vec;
+            %
+            % bias_value_me=bias_value_me/log(2);
+            % bias_value_mm=bias_value_mm/log(2);
+            % %IMPORTANT NOTE:
+            % %the bias_value_me should be subtracted from the raw entropy estimate
+            % % the bias_value_mm shold be subtracted from the naive-corrected entropy estimate (the one obtained from the raw estimate subtracting the C_1 Panzeri bias term computed with the "naive" counting of bins)
+            %
+            % bias0=(sum(prs>eps)-1)/(2*ntr*log(2));
+            % h0=h0+hdt+bias0;
+            % h0=h0-bias_value_mm;
+        """
+        #end  %swithc
+
+    #end #for
+
+    h0 = h0/sum(nta)
+    return h0
+
+
+
+@test_tdd
+def test_hrs_distr_twobiases():
+    for btype in [0,1]:
+        M=5
+        NTA = [1000,1000,1000]
+        a=[]
+        for tr in range(20):
+            spk,L,nta,ns = _test_data_spk_rand(L=2,nta_arr=NTA,M=M)
+            h=hrs(spk,nta,biastype=btype)
+            #print 'H', h - np.log2(M)*L
+            a.append(h)
+        print np.mean(a) - np.log2(M)*L,',' , '+-', np.std(a)
+        #What does the distribution look like?
+
+
+@test_tdd
+def test_MutualInformation_0_distr_twobiases():
+    for btype in [0,1]:
+        M=5
+        NTA = [1000,1000,1000]
+        a=[]
+        for tr in range(20):
+            spk,L,nta,ns = _test_data_spk_rand(L=2,nta_arr=NTA,M=M)
+            h2=hrs(spk,nta,biastype=btype)
+            h1=hr(spk,nta,biastype=btype)
+            #print 'H', h1-h2 #h - np.log2(M)*L
+            a.append(h1-h2)
+        #print np.mean(a) - np.log2(M)*L,',' , '+-', np.std(a)
+        print np.mean(a) - 0.0,',' , '+-', np.std(a)
+        #What does the distribution look like?
+
+def H_from_p(p):
+    print sum(p)
+    assert abs(sum(p) - 1.0) < EPS_PROB
+    assert len(p.shape)==1
+    return - sum(p * np.log2(p + EPS_LOG))
+
+@test_tdd
+def test_MutualInformation_distr_twobiases():
+    L=2
+    #PA=[0.1,0.2,0.7]
+    PA=[1.0/3,1.0/3,1.0/3]
+    p1 = np.tile(np.array(PA).reshape([3,1]),[1,3]) /2 + np.eye(3) / 2.0
+    p1=p1/3
+    px=np.sum(p1,axis=0)
+    py=np.sum(p1,axis=1)
+    pxy=p1.flatten()
+    #assert sum(px)==1.0
+    #assert sum(py)==1.0
+    #assert sum(pxy)==1.0
+    h1=H_from_p(px)
+    h2=H_from_p(py)
+    h3=H_from_p(pxy)
+    #print H_from_p(px) + H_from_p(py) - H_from_p(pxy)
+    #print h1
+    #print h2
+    #print h3
+    print "analytical: ",(h1+h2-h3) * L
+
+    for btype in [0,1]:
+        M=5
+        NTA = [10000,10000,10000]
+        assert np.sum(PA)==1.0
+        a=[]
+        for tr in range(20):
+            #spk,L,nta,ns = _test_data_spk_rand_pa(pa, L=2,nta_arr=NTA,M=M)
+            sys.stdout.write("-");sys.stdout.flush()
+            spk,L,nta,ns = _test_data_spk_plain(PA, L=2,nta_arr=NTA)
+            sys.stdout.write("_");sys.stdout.flush()
+            h2=hrs(spk,nta,biastype=btype)
+            h1=hr(spk,nta,biastype=btype)
+            #sys.stdout.write("_");sys.stdout.flush()
+            print 'H', h1-h2 #h - np.log2(M)*L
+            _debug_show_table2(spk.flatten())
+
+
+            a.append(h1-h2)
+        #print np.mean(a) - np.log2(M)*L,',' , '+-', np.std(a)
+        print np.mean(a) - 0.0,',' , '+-', np.std(a)
+        #What does the distribution look like?
+
+#Testing function test_MutualInformation_distr_twobiases()...
+#-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_0.673389327746 , +- 0.0162120973153
+#-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_0.659461452067 , +- 0.0177021684313
+#passed
+#
+#0.775836103726
+
+
+#1.0
+#analytical:  0.666666666753
+#-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_0.579919387054 , +- 0.00653052998022
+#-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_0.581752993395 , +- 0.00475973942452
+#passed
+#sohail@ss-desktop:~/sohail/sig/marcelo$
