@@ -217,7 +217,9 @@ def probr(spk,nta,r,f, return_count=False):
             #print trials[(i-1):(i-1+new_nta[s]-1+1),:]
             #print trials[(i-1):(i-1+new_nta[s]-1+1),:].shape
 
-            trials[(i-1):(i-1+new_nta[s]-1+1),:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s] ) #.transpose()?
+            #trials[(i-1):(i-1+new_nta[s]-1+1),:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s] ) #.transpose()?
+            #trials[(i-1):(i-1+new_nta[s]-1+1),:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s], [0,3]) #.transpose()?
+            trials[(i-1):(i+new_nta[s]-1),:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s], [0,3]) #.transpose()?
 
             #   #idx[s,0:(nta[s]-1)] = np.random.permutation(range(nta[s]))
             #   idx[s,0:nta[s]] = np.random.permutation(range(nta[s]))+1
@@ -229,7 +231,13 @@ def probr(spk,nta,r,f, return_count=False):
         #r[s,range(new_nta[s])] ==?
         for s in range(ns): #for s=1:ns
             #trials(i:i+new_nta(s)-1,:)=squeeze(spk(1,:,r(s,1:new_nta(s)),s));
-            trials[i-1:i+new_nta(s)-1+1,:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s] ) #no transpose
+            #trials[i-1:i+new_nta(s)-1+1,:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s] , [0,3] ) #no transpose
+            #print new_nta[s]
+            #print trials[(i-1):(i+new_nta[s]-1),0].shape
+            A=spk[0,:,r[s,range(new_nta[s])]-1,s]
+            #print A.shape #(1000,1)
+            A2=np.squeeze(A) #A2=np.squeeze( A , [0,3] )
+            trials[(i-1):(i+new_nta[s]-1),0] = A2 #no transpose
             #      ===               ==                                                ==
             #same!!!
             i+=new_nta[s]
@@ -554,9 +562,11 @@ def _test_data_spk_plain(pa,L,nta_arr):
                 for tr in range(nta[s]):
                     #spk[i,l,tr,s] = RESP_TYPE(np.random.choice(range(M),p=pa))
                     if np.random.random_integers(0,1)==0:
-                        R = 1 # np.random.choice(range(M),p=pa)
+                        #R = 1 # np.random.choice(range(M),p=pa)
+                        R = np.random.choice(range(M),p=pa)
                     else:
-                        R = 0 #s
+                        #R = 0 #
+                        R = s
                     spk[i,l,tr,s] = RESP_TYPE(R)
 
 
@@ -972,9 +982,10 @@ def H_from_p(p):
 def test_MutualInformation_distr_twobiases():
     L=2
     #PA=[0.1,0.2,0.7]
-    PA=[1.0/3,1.0/3,1.0/3]
-    p1 = np.tile(np.array(PA).reshape([3,1]),[1,3]) /2 + np.eye(3) / 2.0
-    p1=p1/3
+    #PA=[1.0/3,1.0/3,1.0/3]
+    NS=2
+    PA=np.array([1.0,1.0]); PA=PA/np.sum(PA)
+    p1 = (np.tile(np.array(PA).reshape([NS,1]),[1,NS]) /2 + np.eye(NS) / 2.0) / NS
     px=np.sum(p1,axis=0)
     py=np.sum(p1,axis=1)
     pxy=p1.flatten()
@@ -991,21 +1002,21 @@ def test_MutualInformation_distr_twobiases():
     print "analytical: ",(h1+h2-h3) * L
 
     for btype in [0,1]:
-        M=5
-        NTA = [10000,10000,10000]
+        #M=5
+        #NTA = [10000,10000,10000]
+        NTA = [1000,1000]
         assert np.sum(PA)==1.0
         a=[]
         for tr in range(20):
             #spk,L,nta,ns = _test_data_spk_rand_pa(pa, L=2,nta_arr=NTA,M=M)
             sys.stdout.write("-");sys.stdout.flush()
-            spk,L,nta,ns = _test_data_spk_plain(PA, L=2,nta_arr=NTA)
+            spk,L,nta,ns = _test_data_spk_plain(PA, L=L,nta_arr=NTA)
             sys.stdout.write("_");sys.stdout.flush()
             h2=hrs(spk,nta,biastype=btype)
             h1=hr(spk,nta,biastype=btype)
             #sys.stdout.write("_");sys.stdout.flush()
-            print 'H', h1-h2 #h - np.log2(M)*L
-            _debug_show_table2(spk.flatten())
-
+            #print 'H', h1-h2 #h - np.log2(M)*L
+            #_debug_show_table2(spk.flatten())
 
             a.append(h1-h2)
         #print np.mean(a) - np.log2(M)*L,',' , '+-', np.std(a)
@@ -1026,3 +1037,11 @@ def test_MutualInformation_distr_twobiases():
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_0.581752993395 , +- 0.00475973942452
 #passed
 #sohail@ss-desktop:~/sohail/sig/marcelo$
+
+"""
+#10000
+analytical:  0.377443751082
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_0.330853238447 , +- 0.00535535147218
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_0.332011461827 , +- 0.004686515463
+passed
+"""
