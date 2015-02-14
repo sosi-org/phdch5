@@ -227,7 +227,6 @@ def probr(spk,nta,r,f, return_count=False):
     assert max(max(wi))-1 < math.pow(M,L) +BIG_EPS
     assert min(min(wi))-1 >= 0  #min >= 1
 
-
     assert max(max(wi)) < math.pow(M,L)+1 +BIG_EPS
 
     #wi : NT x 1 #max<=(M^L)
@@ -241,7 +240,7 @@ def probr(spk,nta,r,f, return_count=False):
 
     #print edges
     #print _debug_show_table2(wi.flatten()) #
-
+    #todo: write an integer historam in C (or use a library)
     count,e2 = np.histogram(wi.flatten(), edges) #
     assert sum(count) == sum(nta)
 
@@ -283,6 +282,7 @@ def hr(spk,nta,biastype):
     L=spk.shape[1] #L=size(spk,2)
     ntr=sum(nta) #%total number of trials
     ns=spk.shape[3] #size(spk,4); #ns=size(spk,4);
+    #todo: Don't shuffle in the Naive estiamtion
     range1=range_shuffle(nta);
     #print range
     #print range
@@ -558,6 +558,7 @@ def test_hr_distr():
         print h - np.log2(M)*L
         a.append(h)
     print np.mean(a) - np.log2(M)*L , '+-', np.std(a)
+    #What does the distribution look like?
 
 
 #why??
