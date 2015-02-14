@@ -41,6 +41,21 @@ def test_tdd(f):
 #    if VERBOSE:
 #        print x
 
+def enum(*sequential, **named):
+    """ Usage:  Numbers = enum('ZERO', 'ONE', 'TWO') ; print Numbers.ZERO; print Numbers.reverse_mapping[2]"""
+    #Based on: http://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python    #By Alec Thomas
+    enums = dict(zip(sequential, range(len(sequential))), **named)
+    reverse = dict((value, key) for key, value in enums.iteritems())
+    enums['reverse_mapping'] = reverse
+    enums['UnknownExcecption'] = Exception
+    return type('Enum', (), enums)
+
+BiasType = enum("NAIVE0", "QE_THREEPOINT1", "NAIVE_CORRECTED2","PANZERI3","MONTEMURRO4","SADDLE5","SIMPS_QUAD6","BUB7","TYPE8","LATHAM")
+print BiasType.NAIVE0, BiasType.QE_THREEPOINT1, BiasType.NAIVE_CORRECTED2,BiasType.PANZERI3,BiasType.MONTEMURRO4,BiasType.SADDLE5,\
+BiasType.SIMPS_QUAD6,BiasType.BUB7,BiasType.TYPE8,BiasType.LATHAM
+
+
+
 def range_shuffle(nta):
     """%this function shuffles the index matrix for all stimulus conditions
     :param nta:
@@ -268,10 +283,11 @@ def probr(spk,nta,r,f, return_count=False):
 
 def hr(spk,nta,biastype):
     #function [h0]=hr(spk,nt,biastype)
-    #This function estimates the response entropy of a set of trials
-    #The result is given in bits
-    #The estimator implemented is chosen by biastype
-
+    """#his function estimates the response entropy of a set of trials
+    The result is given in bits
+    The estimator implemented is chosen by biastype
+    :type biastype: BiasType
+    """
     #global betac #???
     hc0=0
     hc1=0
@@ -293,7 +309,7 @@ def hr(spk,nta,biastype):
     #print "-------"
     #print p
     hc0=-sum( p * np.log2(p + EPS_PROB)) #hc0=-sum((p) .* np.log2(p+ eps));
-    if biastype==0:
+    if biastype==BiasType.NAIVE0:
         #switch biastype
         #case 0
         bias=0;
@@ -340,8 +356,8 @@ def hr(spk,nta,biastype):
         #%hst=(4*hd-h21-h22)/2; %linear extrapolation
         return h0
 
-        
-        
+
+
     elif biastype==2:
         #case 2
         #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -505,13 +521,13 @@ def test_hr_probr():
 
     range1=range_shuffle(nta)
     p,ctr=probr(spk,nta,range1,1, True)
-    print ctr,
-    print np.sort(ctr)
+    #print ctr,
+    #print np.sort(ctr)
     A = np.sort(ctr) # [0,0,0,...,0, ntr]
     A[len(A)-1] == sum(nta)
     assert sum(abs(A[range(len(A)-1)]))==0
 
-    h_R=hr(spk,nta,biastype=0)
+    h_R=hr(spk,nta,biastype=BiasType.NAIVE0)
     print 'H(R)=',abs(h_R), '=?=' , EPS_PROB #3.20342650381e-16 2.22045e-16
     assert abs(h_R) < EPS_PROB*100
 
@@ -525,13 +541,13 @@ def test_hr_probr():
     #_debug_show_table(s1,range(0,70))
     s1=list(np.sort(spk.flatten()))
     #_debug_show_table(s1,range(0,70))
-    _debug_show_table2(s1)
+    #_debug_show_table2(s1)
     #good
 
     range1=range_shuffle(nta)
     p,counts=probr(spk,nta,range1,1, True)
     #print counts
-    print counts
+    #print counts
     #print -np.sort(-counts)
 
     #[226 145 136 135 130 128 125 124 124 121 120 120 119 119 118 117 117 115 115 113 113 112 108 100   0]
@@ -542,20 +558,20 @@ def test_hr_probr():
     #A[len(A)-1] == sum(nta)
     #assert sum(abs(A[range(len(A)-1)]))==0
 
-    h_R=hr(spk,nta,biastype=0)
-    print abs(h_R) , np.log2(5)*L,EPS_PROB #3.20342650381e-16 2.22045e-16
+    h_R=hr(spk,nta,biastype=BiasType.NAIVE0)
+    print '|H(R)|=',abs(h_R) , np.log2(5)*L,EPS_PROB #3.20342650381e-16 2.22045e-16
     #4.6389075846 bit!
     #assert abs(h_R) < EPS_PROB*100
 
 @test_tdd
 def test_hr_distr():
     M=5
-    NTA = [1000,1000,1000] #[10,20,30]
+    NTA = [1000,1000,1000] # NTA= [10,20,30]  #[1000,1000,10]
     a=[]
     for tr in range(10):
         spk,L,nta,ns = _test_data_spk_rand(L=2,nta_arr=NTA,M=M)
-        h=hr(spk,nta,biastype=0)
-        print h - np.log2(M)*L
+        h=hr(spk,nta,biastype=BiasType.NAIVE0)
+        #print h - np.log2(M)*L
         a.append(h)
     print np.mean(a) - np.log2(M)*L , '+-', np.std(a)
     #What does the distribution look like?
