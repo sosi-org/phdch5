@@ -105,3 +105,93 @@ def test_spk1LNS():
     print spk.nta
     (a,b)=(spk.hr(1), spk.hrs(1))
     print round001(a-b)
+
+def sliding(zq_TxN, L, step=1, offset=0, downsample=False): #also step between L elements?
+    """ converts a TxN into LxSN : To convert continuous signals into spka format """
+    #assert type(zq_TxN[0,0]) is int
+    #zq: (nlen,ntr) = (T,N)
+    #assert step==1
+    import numpy,math
+    ns = int(math.floor((zq_TxN.shape[0]-L+1)/step)) #only tested for step==1
+    #print "ns=%d"%ns
+    ntr=zq_TxN.shape[1]
+    #zL=numpy.zeros((ns,ntr), type(zq[0,0]))
+    if step>1:
+        print "Warning: todo: down-sample"
+        #todo: downsample types
+        if downsample:
+            raise Exception("Not implemented")
+
+    z_LxSN=numpy.zeros((L,ns*ntr), type(zq_TxN[0,0]))
+    #nta = numpy.zeros(nlen, type(zq[0,0]))
+    nta = numpy.zeros(ns,int)
+    print type(nta[0])
+    word_start = offset #argument: offset
+    SN_ctr = 0 #The SN dimension is (Stim x Ntr), i.e, arrays of ntr repeated Stim (=ns) times.  Lx SN=Lx(Stim x Ntr)
+    for i in range(ns):
+        a=zq_TxN[0+word_start:L+word_start,:]  # Lx30
+        z_LxSN[0:L,SN_ctr+0:SN_ctr+ntr] = a
+        #start = start + 1   #todo: start=i
+        word_start = word_start + step  #todo: start=i*step
+        nta[i] = ntr
+        SN_ctr=SN_ctr+ntr #todo: ntrctr = i*ntr
+    return z_LxSN,nta
+
+def Spka_from_signal_TxN(zq_TxN,L):
+    #not tested
+    z_LxSN,nta = sliding(zq_TxN, L, step=1, offset=0, downsample=False)
+    spk1 = z_LxSN.reshape([1]+z_LxSN.shape)
+    return Spk1LNS(nta_arr=nta, spka=spk1)
+
+def quantize_TxN(z_TxN, M, uniform_code):
+    raise Exception("Not implemented")
+    z_NxT=z_TxN.transpose()
+    z_NxT_shape=z_NxT.shape
+    z_Arr=z_NxT.reshape([z_NxT.size]) #straighted.  z2d.size=total elements
+    zq_Arr,bin_bounds, bin_centers = pyentropy.quantise(z_Arr, M, uniform=uniform_code)
+    zq_NxT = zq_Arr.reshape(z_NxT_shape)
+    return zq_NxT.transpose()
+
+
+
+class Quantizer:
+    def quantize(s):
+        #assert len(s.shape)==1
+        assert type(s) is np.array
+        raise "abstact class"
+
+
+#QUANTIZERS=Quantizer.__subclasses__()
+
+class Signal_TxN:
+    """ For keeping responses in te format of time_samples x trials. This is very useful for continuous signals."""
+    #quantize_TxN
+    def __init__(self, signal_TxN, ntr=-1):
+        """ ntr
+        :param signal_TxN: signal time_samples x trials. Can be either array of float or int.
+        :param ntr: is mandatory
+        :type ntr: int
+        """
+        assert len(signal_TxN.shape)==2
+        self.signal_TxN = signal_TxN
+        if ntr == -1:
+            raise Exception("ntr argument is mandatory.")
+        assert self.signal_TxN.shape[1]==ntr
+        #self.state='raw'
+    def _state_is_continuous(self):
+        return type(self.signal_TxN[0,0]) in [int, np.int8,np.int16,np.int32,np.int64] #wrong
+    def _state_is_discrete(self):
+        return not self._state_is_continuous()
+        #return not type self.signal_TxN[0,0] in [float, np.float] #wrong
+    def resample(self,N, method):
+        assert self._state_is_continuous()
+        raise Exception("Not implemented")
+    def quantise(self,M,method):
+        assert method in Quantizer.__subclasses__(), "Quantizer can be one of the following: [%r]"%(Quantizer.__subclasses__(),)
+        self.signal_TxN = quantize_TxN(self.signal_TxN, M, method)
+        #self.state='quantised'
+    def get_Spka(self):
+        #assert self.state=='quantised'
+        assert self._state_is_discrete()
+        nta=[self.signal_TxN.shape[1]]
+        return Spka_from_signal_TxN(self.signal_TxN, nta)

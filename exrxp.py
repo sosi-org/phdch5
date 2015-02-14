@@ -3,7 +3,7 @@ import numpy.random
 import numpy as np
 import myshared #verbose
 
-def exrxp ( n , tau_sec , fs_Hz ):
+def exrxp ( n , tau_sec , fs_Hz, KLENRATIO=5 ):
     """
      @type n: int
      @type tau_sec: float
@@ -13,7 +13,7 @@ def exrxp ( n , tau_sec , fs_Hz ):
     fs_Hz=float(fs_Hz)
     
     # the kernel function :
-    klen = 5 * tau_sec * fs_Hz
+    klen = KLENRATIO * tau_sec * fs_Hz
     assert tau_sec>0 #don't include 0
     
     klen=int(numpy.ceil(klen))
