@@ -1,10 +1,24 @@
 #!/usr/bin/python
 # A port of M.A.M.'s code into Python
+# External compatibility: the results and inputs are the same
+# The first version is non-Pythonic
+
 import numpy as np
+import math
 import sys
 
-VERBOSE = 0
-TEST = 0
+VERBOSE = 1
+TEST = 1
+DEEP_TEST_DATA = 1 #test all elements of arrays
+
+COUNT_TYPE = np.int8 # np.int16  #number of trials
+RESP_TYPE = np.int8
+PROB_TYPE = np.float32 #or 64?
+
+#np.emath.
+EPS = sys.float_info.epsilon  #http://stackoverflow.com/questions/23190017/is-pythons-epsilon-value-correct
+print EPS
+EPS_PROB =PROB_TYPE(EPS)
 
 #decorators
 def test_tdd(f):
@@ -34,6 +48,7 @@ def range_shuffle(nta):
         #np.random.permutation(arr)
         #idx[s,0:(nta[s]-1)] = np.random.permutation(range(nta[s]))
         idx[s,0:nta[s]] = np.random.permutation(range(nta[s]))+1
+    #end
     return idx
 
 @test_tdd
@@ -49,10 +64,157 @@ def test_range_shuffle():
     test_log( np.sort(nta) )
     assert all(np.sort(nta_reproduced) == np.sort(nta))
 
-exit(0)
+def _checktype_spk1LNS(spk, nta=None):
+    assert type(spk) is np.ndarray
+    print type(spk[0,0,0,0]) #int64?!
+    assert type(spk[0,0,0,0]) is RESP_TYPE #np.int8 #int
+    ns=spk.shape[4-1] #ns=size(spk,4);
+    ntr=spk.shape[3-1] #ntr=size(spk,3);
+    L=spk.shape[2-1] #size(spk,2);
+    if DEEP_TEST_DATA:
+        M=max(spk.flatten())+1 #M=max(reshape(spk,1,[]))+1;
+        assert min(spk.flatten())>=0
+        #for i in range(1):
+        #    for l in range(L):
+        #        for nt in range(ntr):
+        #            for s in range(ns):
+        #                spk[i,l,nt,s] #spk[i,L,ntr,ns]
+    if not nta is None:
+        for i in range(1):
+            for l in range(L):
+                #for nt in range(nta):
+                    for s in range(ns):
+                        assert (spk[i,l,ntr:nta[s],s] == 0)
+                        assert sum(abs(spk[i,l,ntr:nta[s],s])) == 0
 
-"""
-def hr(spk,nt,biastype):
+def _checktype_nta(nta, ns):
+    #assert type(nta) is np.ndarray or type(nta) is list
+    #assert type(nta[0]) is COUNT_TYPE or type(nta[0]) is int #alwso allow plain Python list of int
+    assert type(nta) is np.ndarray
+    assert type(nta[0]) is COUNT_TYPE
+    #alsochecks the consistency
+    assert len(nta) == ns
+
+
+
+#def _checktype_probr(p,...,nta,ns,...)
+
+def probr(spk,nta,r,f, return_count=False):
+    #function p=probr(spk,nt,r,f)
+    """
+    :param spk:
+    :type spk: np.ndarray
+    :param nta:
+    :type nta: list
+    :param r:
+    :type r:
+    :param f:
+    :type f: int
+    :return: p
+    :rtype:
+    this function works with the static version
+    f is the factor that divides the number of trials to use
+    nta stores the number of trials per stimulus condition
+    """
+    #rsa  LxNxS  1xLxNxS  1LNS spk1xLxNxS spk1LNS
+    assert type(spk) is np.ndarray
+    _checktype_spk1LNS(spk, nta=None)
+    #assert len(spk.shape)==4
+    ntr=spk.shape[3-1] #ntr=size(spk,3);
+    ns=spk.shape[4-1] #ns=size(spk,4);
+    L=spk.shape[2-1] #size(spk,2);
+    M=max(spk.flatten())+1 #M=max(reshape(spk,1,[]))+1;
+    _checktype_nta(nta,ns)
+
+    #%number of trials for the subset
+    assert type(f) is int
+    #todo: some trials are removed in QE
+    new_nta = nta/f #new_nt=floor(nt/f);   #:type new_nta: list
+    assert len(new_nta)==len(nta)
+    #_checktype_nta(nta,ns/f)
+
+    #%these must be selected randomly from the original set
+    tot_nt=sum(new_nta) #tot_nt=sum(new_nt);
+    trials=np.zeros([tot_nt,L], COUNT_TYPE) #trials=zeros(tot_nt,L);
+    i=1 #i=1;
+    if L>1:
+        for s in range(ns): #for s=1:ns
+            #trials(i:i+new_nta(s)-1,:)=squeeze(spk(1,:,r(s,1:new_nta(s)),s))';
+            print new_nta[s],L
+            print r[s,range(new_nta[s])]-1
+            print spk[0,:,r[s,range(new_nta[s])]-1,s]
+            print trials[(i-1):(i-1+new_nta[s]-1+1),:]
+            print trials[(i-1):(i-1+new_nta[s]-1+1),:].shape
+
+            trials[(i-1):(i-1+new_nta[s]-1+1),:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s] ) #.transpose()?
+
+            #   #idx[s,0:(nta[s]-1)] = np.random.permutation(range(nta[s]))
+            #   idx[s,0:nta[s]] = np.random.permutation(range(nta[s]))+1
+
+            #i=i+new_nta(s);
+            i += new_nta[s]
+        #end
+    else:
+        #r[s,range(new_nta[s])] ==?
+        for s in range(ns): #for s=1:ns
+            #trials(i:i+new_nta(s)-1,:)=squeeze(spk(1,:,r(s,1:new_nta(s)),s));
+            trials[i-1:i+new_nta(s)-1+1,:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s] ) #no transpose
+            #      ===               ==                                                ==
+            #same!!!
+            i+=new_nta[s]
+            #i=i+new_nta(s);
+        #end
+    #end
+
+    #M_pow_L = math.pow(M,L)
+    #p=zeros(1,M^L);
+    p = np.zeros([1,math.pow(M,L)], PROB_TYPE)
+    #count=zeros(M^L,1);
+    count=np.zeros([math.pow(M,L),1],COUNT_TYPE)
+    #wi=1+trials*(M.^[0:L-1])';
+    #wi=1+trials*np.power(M,[0:L-1]) #'; tranpose
+    print "-------"
+    print trials.shape #6x2
+    print np.power(M,range(L)).shape #2x-
+    print trials #6x2  [1,2]
+    #print np.power(M,range(L)) #2x-   [[1,1], x 6]
+    B = np.power(M,np.array(range(L)).reshape([L,1]))  #'; tranpose
+    print B.shape #2x-   [[1,1], x 6]
+    print B #2x-   [[1,1], x 6]
+    #wi=1+trials .dot(np.power(M,range(L))) #'; tranpose
+    # trials: 2dim
+    wi=1+trials .dot(B)
+    print wi #
+    print wi.shape  # 6x1   NTR x
+    assert wi.shape[0] == sum(nta)
+    assert wi.shape[1] == 1
+    print math.pow(M,L)
+    print max(max(wi))-1,math.pow(M,L)
+    assert max(max(wi))-1+EPS < math.pow(M,L)
+    assert min(min(wi))-1 >= 0
+    #wi : NT x 1 #max<=(M^L)
+    #count=histc(wi,[1:M^L+eps]);
+    edges = np.array(range(1+int(EPS+math.pow(M,L))))+EPS #bin edges, including the rightmost edge,
+    print edges
+    count,e2 = np.histogram(wi.flatten(), edges) #
+    print count.shape # (3,)
+    print e2
+    print wi
+    print count
+
+    #p=(count'/sum(count));
+    #p=(count.transpose()/sum(count))
+    p=count / PROB_TYPE(sum(count))
+    print p
+    if return_count:
+        return p,count
+    else:
+        return p
+
+
+
+
+def hr(spk,nta,biastype):
     #function [h0]=hr(spk,nt,biastype)
     #This function estimates the response entropy of a set of trials
     #The result is given in bits
@@ -66,42 +228,44 @@ def hr(spk,nt,biastype):
     hc4=0
     hc5=0
     L=spk.shape[1] #L=size(spk,2)
-    ntr=sum(nt) #%total number of trials
+    ntr=sum(nta) #%total number of trials
     ns=spk.shape[3] #size(spk,4); #ns=size(spk,4);
-    range=range_shuffle(nt);
-    p=probr(spk,nt,range,1); #*********
+    range1=range_shuffle(nta);
+    #print range
+    #print range
+    p=probr(spk,nta,range1,1); #*********
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     #%Direct estimation
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    #np.emath.
-    EPS = sys.float_info.epsilon  #http://stackoverflow.com/questions/23190017/is-pythons-epsilon-value-correct
-    print EPS
-    hc0=-sum( p * np.log2(p+ EPS)) #hc0=-sum((p) .* np.log2(p+ eps));
+    print "-------"
+    print p
+    hc0=-sum( p * np.log2(p + EPS_PROB)) #hc0=-sum((p) .* np.log2(p+ eps));
     if biastype==0:
         #switch biastype
         #case 0
         bias=0;
         h0=hc0;
         return h0
+"""
     elif biastype==1:
         # case 1
         #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         #%This is the 3 point extrapolation taking 1/4, 1/2 and 1/1 of the trials
         #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         #   %range=range_shuffle(nt);
-        r21=range_frac(range,nt,2,1);
-        r22=range_frac(range,nt,2,2);
-        r41=range_frac(range,nt,4,1);
-        r42=range_frac(range,nt,4,2);
-        r43=range_frac(range,nt,4,3);
-        r44=range_frac(range,nt,4,4);
+        r21=range_frac(range,nta,2,1);
+        r22=range_frac(range,nta,2,2);
+        r41=range_frac(range,nta,4,1);
+        r42=range_frac(range,nta,4,2);
+        r43=range_frac(range,nta,4,3);
+        r44=range_frac(range,nta,4,4);
         
-        p21=probr(spk,nt,r21,2);
-        p22=probr(spk,nt,r22,2);
-        p41=probr(spk,nt,r41,4);
-        p42=probr(spk,nt,r42,4);
-        p43=probr(spk,nt,r43,4);
-        p44=probr(spk,nt,r44,4);
+        p21=probr(spk,nta,r21,2);
+        p22=probr(spk,nta,r22,2);
+        p41=probr(spk,nta,r41,4);
+        p42=probr(spk,nta,r42,4);
+        p43=probr(spk,nta,r43,4);
+        p44=probr(spk,nta,r44,4);
         
         h21=-sum(p21*np.log2(p21+EPS));
         h22=-sum(p22*np.log2(p22+EPS));
@@ -112,9 +276,9 @@ def hr(spk,nt,biastype):
         h4=(h41+h42+h43+h44)/4;
         h2=(h21+h22)/2;
         
-        n1=sum(nt);
-        n2=sum(np.floor(nt/2));
-        n4=sum(np.floor(nt/4));
+        n1=sum(nta);
+        n2=sum(np.floor(nta/2));
+        n4=sum(np.floor(nta/4));
         
         h0=lagrange3([1.0/n4 1.0/n2 1.0/n1],[h4 h2 hc0],0);
         #%h0=(8*hc0-6*h2+h4)/3; %parabolic extrapolation
@@ -192,17 +356,17 @@ def hr(spk,nt,biastype):
     elif biastype==8:
         #case 8
         #%range=range_shuffle(nt);
-        r21=range_frac(range,nt,2,1);
-        r22=range_frac(range,nt,2,2);
+        r21=range_frac(range,nta,2,1);
+        r22=range_frac(range,nta,2,2);
         
-        p21=probr(spk,nt,r21,2);
-        p22=probr(spk,nt,r22,2);
+        p21=probr(spk,nta,r21,2);
+        p22=probr(spk,nta,r22,2);
         
         h21=-sum(p21.*log2(p21+EPS));
         h22=-sum(p22.*log2(p22+EPS));
         h2=(h21+h22)/2;
-        n1=sum(nt);
-        n2=sum(floor(nt/2));
+        n1=sum(nta);
+        n2=sum(floor(nta/2));
 
         h0=lagrange2([1/n2 1/n1],[h2 hc0],0);
         
@@ -247,17 +411,46 @@ def hr(spk,nt,biastype):
 
         
         
-
 #%error estimation, Latham's
 #%N=ntr;
 #%err=sqrt((sum(p.*log2(p+eps).^2)-(hd*L)^2)/(L*N));
+"""
 
 
-def test_hr():
-    pass
+def _test_data_spk_singleval(L,nta_arr, value):
+    L=2; nta=np.array(nta_arr,COUNT_TYPE);ns=len(nta)
+    _checktype_nta(nta, ns)
+    spk = np.zeros([1,L,len(nta),ns], np.int8)
+    for i in range(1):
+        for l in range(L):
+            for s in range(ns):
+                print ns, nta[s]
+                for tr in range(nta[s]):
+                    spk[i,l,tr,s] = value
+    return spk,L,nta,ns
+
+@test_tdd
+def test_hr_probr():
+    #def make_spk1LNS():
+    #    zeros()i,l,ntr:nta[s],s
+    #    spk =
+    spk,L,nta,ns = _test_data_spk_singleval(L=2,nta_arr=[1,2,3],value=1)
+
+    range1=range_shuffle(nta)
+    p,ctr=probr(spk,nta,range1,1, True)
+    print ctr
+    print np.sort(ctr)
+    A = np.sort(ctr) # [0,0,0,...,0, ntr]
+    A[len(A)-1] == sum(nta)
+    assert sum(abs(A[range(len(A)-1)]))==0
+
+    h_R=hr(spk,nta,biastype=0)
+    print abs(h_R) , EPS_PROB #3.20342650381e-16 2.22045e-16
+    assert abs(h_R) < EPS_PROB*100
 
 
 #why??
 #np.max([2,3,3.4])
 #Out[14]: 3.3999999999999999
-"""
+
+
