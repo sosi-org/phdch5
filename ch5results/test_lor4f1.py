@@ -2,6 +2,7 @@ import numpy as np
 import exrxp
 import pyentropy
 
+EPS=0.000000001
 
 def quantize_TxN(z_TxN, M, uniform_code):
     z_NxT=z_TxN.transpose()
@@ -33,12 +34,28 @@ def downsample(z2d, downsample_b):
     print "todo"
     return z2d
 
-def makelorresponse(tausigma_s, tausigma_n, fs_Hz, shape, what=[], downsample_b):
+def _isint(x):
+    #return type(shape[0]) is int
+    return issubclass(type(x), np.integer) or issubclass(type(x), int)
+    #n.dtype('int8').kind == 'i'
+
+
+def makelorresponse(tausigma_s, tausigma_n, fs_Hz, shape, downsample_b):
+    #def makelorresponse(tausigma_s, tausigma_n, fs_Hz, shape, what=[], downsample_b):
     #def makelorresponse(tau_s,sigma_s, tau_n, sigma_n, ntr, nlen, fs_Hz,what=[], downsample_b):
     #nlen = siglen_sec*fs_Hz
     (nlen,ntr) = shape
-    z2d = exrxp.exrxp_ntr (nlen,tausigma_n[0],fs_Hz, ntr) * tausigma_n[1] #* 2 #*2*4
+    assert _isint(shape[0]), str(type(shape[0]))
+    assert _isint(shape[1]), str(type(shape[1]))
+
+    assert type(downsample_b) is int
+    assert downsample_b > 0
+    print "1"
     z0 = exrxp.exrxp_ntr (nlen,tausigma_s[0],fs_Hz, 1) * tausigma_s[1]
+    print "2:",ntr, "x",nlen
+    return
+    z2d = exrxp.exrxp_ntr (nlen,tausigma_n[0],fs_Hz, ntr) * tausigma_n[1] #* 2 #*2*4
+    print "3"
     resp2d = z2d + np.tile(z0,[1,ntr])
     return downsample(resp2d,downsample_b)
 
@@ -48,9 +65,14 @@ def zzz(resp2d,L,M):
     return z2dqL,nta
 
 def discr(raw,M):
+    print "error"
     return resp_dig, dithinfo
 def dith_unsure(raw,centres):
+    print "error"
     return resp_dith, dithinfo
+
+def almost_eq(a,b):
+    return abs(a-b)<EPS
 
 def make_signals(taustd_s,taustd_n, M):
     #if 0
@@ -72,19 +94,39 @@ def make_signals(taustd_s,taustd_n, M):
     #%NTA=2.^[4:5];
     #%NTA=2.^[4:8,9];
     NTA=np.power(2,[4,5,6,8,10,12])
+    NTA=np.power(2,[4,5])
     #nt_generate=max(NTA);
+    print NTA
 
-
-    fs_Hz=1000
+    #fs_Hz=1000
     binlen_sec=7.0/1000.0 #7,3,5,1
-    siglen_sec=10.000; siglen_sec=np.floor(siglen_sec/binlen_sec)*binlen_sec
-    downsample_b=binlen_sec*fs_Hz #%1, fs=1000 ===> 1   2==>2
-    nlen = siglen_sec*fs_Hz
-    #%downsample_b happens to be equal to b, if fs=1000
-    assert(siglen_sec % binlen_sec==0);
+    siglen_sec=1.000 #quick test
+    downsample_b = 7
+    if False:
+        #siglen_sec=10.000;
+        print siglen_sec, siglen_sec % binlen_sec
+        siglen_sec=np.floor(siglen_sec/binlen_sec)*binlen_sec
+        print siglen_sec, siglen_sec % binlen_sec
+        downsample_b=binlen_sec*fs_Hz #%1, fs=1000 ===> 1   2==>2
+        nlen = siglen_sec*fs_Hz
+        #problem: print  0.994000 % 0.007000 - 0.007
+        #-2.60208521397e-17
+        #np.float     np.float128  np.float16   np.float32   np.float64   np.float_    np.floating
+        #
+        #%downsample_b happens to be equal to b, if fs=1000
+        assert almost_eq(siglen_sec % binlen_sec, 0), "%f %% %f = %f"%(siglen_sec, binlen_sec, siglen_sec % binlen_sec,)
 
+    nlen = int(np.floor(siglen_sec/binlen_sec))
+    print nlen,siglen_sec/binlen_sec
+    fs_Hz = 1.0/(binlen_sec/float(downsample_b))
+    print fs_Hz
+    print "%f"%(fs_Hz - int(fs_Hz),)
+
+    print "raw",nlen,max(NTA),
     #r2_raw = makelorresponse(tau_s,std_s, tau_n, std_n, max(NTA), nlen, fs_Hz,[], downsample_b)
-    r2_raw = makelorresponse(taustd_s, taustd_n, fs_Hz, (nlen,max(NTA)), [], downsample_b)
+    #r2_raw = makelorresponse(taustd_s, taustd_n, fs_Hz, (nlen,max(NTA)), [], downsample_b)
+    r2_raw = makelorresponse(taustd_s, taustd_n, fs_Hz, (nlen,max(NTA)), downsample_b)
+    print "war"
 
     siglen_bins=siglen_sec/binlen_sec
     del siglen_sec
@@ -102,27 +144,38 @@ taustd_s=(25.0/1, 3.53)
 taustd_n=(12.0/1, 5.55)
 M=5  #4,8,5,3,15
 
+print "***-4"
 r2_raw =make_signals(taustd_s,taustd_n, M)
+print "***-3"
 resp_dig,dithinfo1 = discr(r2_raw, M) #%not dithered
+print "***-2"
 resp_dith,dithinfo2 = dith_unsure(r2_raw, dithinfo1.centres) #%not dithered
 
+print "***-1"
 
-resp_dig=resp_dith;
-clear dithinfo;
-resp_dig=resp_dig-1;
+resp_dig=resp_dith
+del  dithinfo
+resp_dig=resp_dig-1
 
+print "***1"
 resp_cont=r2_raw;
-resp_cont=resp_cont-mean(resp_cont(:));
-#%resp_cont=resp_cont/std(resp_cont(:))/2;
-#%resp_cont=resp_cont/std(resp_cont(:))/2*1.5*4*4;
-resp_cont=resp_cont/std(resp_cont(:))/2*1*M/(M-1);
+print "***2"
+resp_cont=resp_cont-resp_cont.flatten().mean()
+print "***3"
+resp_cont=resp_cont/resp_cont.flatten().std()/2.0*1*float(M)/float(M-1)
+print "***4"
 #% [-1,+1]
-resp_cont=(resp_cont+1)/2;  % [0,1]
-resp_cont=resp_cont*(M-1);
-if 1
+resp_cont=(resp_cont+1.0)/2.0;  #% [0,1]
+resp_cont=resp_cont*float(M-1);
+if True:
+    print resp_cont.reshape
+    exit(0)
+    """
     resp_cont(resp_cont(:)<0)=0;
     resp_cont(resp_cont(:)>M-1)=M-1;
-end
+    """
+
+"""
 #%clear r2_raw;
 
 
@@ -689,3 +742,4 @@ hold on;
 plot(pr_dith,'r.-', 'displayname','dith');
 [sum(pr_dith),sum(pr_dig)]
 legend show;
+"""
