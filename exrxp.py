@@ -3,6 +3,8 @@ import numpy.random
 import numpy as np
 import myshared #verbose
 
+MAXSIZE=1E9 #1E7
+
 def exrxp ( n , tau_sec , fs_Hz, KLENRATIO=5 ):
     """
      @type n: int
@@ -26,9 +28,15 @@ def exrxp ( n , tau_sec , fs_Hz, KLENRATIO=5 ):
 
     #assert klen<n*100
 
+
+    print klen #too big!!
+    if klen > 2000:
+        print "Warning: TOO BIG!" #125000
+
+
     assert klen<n*1000
     assert n>0
-    assert n*klen<1E7 #takes up to a few seconds. todo: improve these conditions.
+    assert n*klen<MAXSIZE, "%g"%(n*klen,) #takes up to a few seconds. todo: improve these conditions.
     #klen is ready
 
     #t = [ 0 : ( klen -1) ] / fs_Hz ;
