@@ -51,9 +51,13 @@ def makelorresponse(tausigma_s, tausigma_n, fs_Hz, shape, downsample_b):
     assert type(downsample_b) is int
     assert downsample_b > 0
     print "1"
+    print "expr... ",repr((nlen,tausigma_s[0],fs_Hz, 1) )
+    assert tausigma_s[0]*fs_Hz < 1000
+    assert tausigma_n[0]*fs_Hz < 1000
+
     z0 = exrxp.exrxp_ntr (nlen,tausigma_s[0],fs_Hz, 1) * tausigma_s[1]
     print "2:",ntr, "x",nlen
-    return
+
     z2d = exrxp.exrxp_ntr (nlen,tausigma_n[0],fs_Hz, ntr) * tausigma_n[1] #* 2 #*2*4
     print "3"
     resp2d = z2d + np.tile(z0,[1,ntr])
@@ -64,8 +68,54 @@ def zzz(resp2d,L,M):
     z2dqL,nta = sliding(z2d_q, L=L)
     return z2dqL,nta
 
-def discr(raw,M):
-    print "error"
+
+def atomic_quantize_uniform(input, m, centers=True):
+    #fixme: py entropy
+    bin_centers = np.zeros(m)
+    bin_numel = np.floor(input.size/m)
+    r = input.size - (bin_numel*m)
+
+    stemp = input.copy()
+    stemp.sort(axis=0)
+    idx = np.arange(bin_numel, bin_numel*m, bin_numel, dtype=np.int)
+    idx[0:r] = idx[0:r] + np.arange(1,r+1,dtype=np.int)
+    idx[r:] = idx[r:] + r
+    bin_bounds = stemp[idx]
+    if centers:
+        return c2_centres(bin_bounds,stemp,m,bin_centers)
+    else:
+        return c2_noncentres(bin_bounds) #c2(bin_bounds,stemp,m,bin_centers,centers)
+
+def c2_centres(bin_bounds,stemp,m,bin_centers):
+    # calculate center for each bin
+    bin_centers[0] =  (bin_bounds[0]+stemp[0]) / 2.0
+    for i in range(1,m-1):
+        bin_centers[i] = (bin_bounds[i]+bin_bounds[i-1])/2.0
+    bin_centers[m-1] = (stemp[-1]+bin_bounds[-1]) / 2.0
+
+    # bin centers
+    q_value = np.digitize(input, bin_bounds)
+    return q_value, bin_bounds, bin_centers
+
+def c2_noncentres(bin_bounds):
+    q_value = np.digitize(input, bin_bounds)
+    return q_value, bin_bounds
+
+
+
+def discr(raw,M): #142x32 = siglen x ntr
+    #    z_NxT=z_TxN.transpose()
+    #    z_NxT_shape=z_NxT.shape
+    #    #print z2d[0:10,0] # [ntr  x nlen ]
+    #    z_Arr=z_NxT.reshape([z_NxT.size]) #straighted.  z2d.size=total elements
+    #    #print z2d_reshaped[0:10] #if not trsnsposed,  tr1,tr2,tr3,  tr1,tr2,tr3
+    z_Arr=raw.flatten('F') #First, one round of siglen (one trial), then next trial, etc. In case of siglen x ntrials
+    zq_Arr,bin_bounds, bin_centers = atomic_quantize_uniform(z_Arr,M)
+
+    #zq_Arr,bin_bounds, bin_centers = pyentropy.quantise(z_Arr, M, uniform=uniform_code)
+    zq_NxT = zq_Arr.reshape(z_NxT_shape)
+    resp_dig = zq_NxT.transpose()
+
     return resp_dig, dithinfo
 def dith_unsure(raw,centres):
     print "error"
@@ -119,7 +169,7 @@ def make_signals(taustd_s,taustd_n, M):
     nlen = int(np.floor(siglen_sec/binlen_sec))
     print nlen,siglen_sec/binlen_sec
     fs_Hz = 1.0/(binlen_sec/float(downsample_b))
-    print fs_Hz
+    print "fs_Hz",fs_Hz
     print "%f"%(fs_Hz - int(fs_Hz),)
 
     print "raw",nlen,max(NTA),
@@ -128,8 +178,11 @@ def make_signals(taustd_s,taustd_n, M):
     r2_raw = makelorresponse(taustd_s, taustd_n, fs_Hz, (nlen,max(NTA)), downsample_b)
     print "war"
 
-    siglen_bins=siglen_sec/binlen_sec
+    siglen_bins=int(siglen_sec/binlen_sec)
     del siglen_sec
+    print siglen_bins
+    print r2_raw.shape
+
     assert siglen_bins == r2_raw.shape[0]
 
     return r2_raw
@@ -140,8 +193,8 @@ def make_signals(taustd_s,taustd_n, M):
 
 BIAS_TYPE=0
 
-taustd_s=(25.0/1, 3.53)
-taustd_n=(12.0/1, 5.55)
+taustd_s=(25.0/1000, 3.53)
+taustd_n=(12.0/1000, 5.55)
 M=5  #4,8,5,3,15
 
 print "***-4"
