@@ -109,7 +109,7 @@ for M in [2,3,5]: #[2,3,4,5,6,7,8,9,10,11,15,20,30,50,100]:
     print mi
 
     import analytical_exrxp as e
-    a=e.exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n,fs_Hz)
+    a=e.exrxp_analytical_mi(tau_s_msec/1000,sigma_s,tau_n_msec/1000,sigma_n,fs_Hz)
     a_mi_persec = a[0]
     ami_perbin = a_mi_persec / fs_Hz
     #print "mi= %g "%( a_mi_persec / fs_Hz * nlen   ,)
@@ -136,7 +136,7 @@ for M in [2,3,5]: #[2,3,4,5,6,7,8,9,10,11,15,20,30,50,100]:
 
 import matplotlib.pyplot as pp
 import myshared
-pp.rc('text', usetex=True)
+#pp.rc('text', usetex=True)
 p0=pp.plot(est_M[0],0.0)
 p1=pp.plot(est_M,est_mi, label='est')
 p2=pp.plot(est_M,est_a_mi, label='analyt')

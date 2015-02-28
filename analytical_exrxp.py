@@ -3,7 +3,7 @@
 import numpy as np
 import math
 
-def exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n, fs_Hz,d_freq=0.001235456789):
+def exrxp_analytical_mi(tau_s_sec,sigma_s,tau_n_sec,sigma_n, fs_Hz,d_freq=0.001235456789):
     #see analytical_lor.m
     #;
     # function [mi_persec, psdinfo]=analytical_lor(tau_s_msec,sigma_s,tau_n_msec,sigma_n, fs_Hz,d_freq)
@@ -17,15 +17,15 @@ def exrxp_analytical_mi(tau_s_msec,sigma_s,tau_n_msec,sigma_n, fs_Hz,d_freq=0.00
     #return freq_arr, freq_step
     nyquist_omega = nyquist_freq*2*math.pi
     omega=freq_arr*2*math.pi
-    taus=tau_s_msec/1000.0 #unit conversion
-    taun=tau_n_msec/1000.0
+    #taus=tau_s_msec/1000.0 #unit conversion
+    #taun=tau_n_msec/1000.0
 
-    var_s = taus*math.atan(nyquist_omega*taus)/math.pi #i.e., tau/2 if fs_Hz=Inf
-    var_n = taun*math.atan(nyquist_omega*taun)/math.pi
+    var_s = tau_s_sec*math.atan(nyquist_omega*tau_s_sec)/math.pi #i.e., tau/2 if fs_Hz=Inf
+    var_n = tau_n_sec*math.atan(nyquist_omega*tau_n_sec)/math.pi
     #return omega
     #np.pow(np.power(omega,2)+np.power(taus,-2),-1)
-    psd_s = 1.0 / (np.power(omega,2)+np.power(taus,-2)) * (np.power(sigma_s,2) / var_s)
-    psd_n = 1.0 / (np.power(omega,2)+np.power(taun,-2)) * (np.power(sigma_n,2) / var_n)
+    psd_s = 1.0 / (np.power(omega,2)+np.power(tau_s_sec,-2)) * (np.power(sigma_s,2) / var_s)
+    psd_n = 1.0 / (np.power(omega,2)+np.power(tau_n_sec,-2)) * (np.power(sigma_n,2) / var_n)
 
     psd_snr = psd_s / psd_n
 
