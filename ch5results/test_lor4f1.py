@@ -82,41 +82,48 @@ def atomic_quantize_uniform(input, m, centers=True):
     idx[r:] = idx[r:] + r
     bin_bounds = stemp[idx]
     if centers:
-        return c2_centres(bin_bounds,stemp,m,bin_centers)
+        return c2_centres(input, bin_bounds,stemp,m,bin_centers)
     else:
-        return c2_noncentres(bin_bounds) #c2(bin_bounds,stemp,m,bin_centers,centers)
+        return c2_noncentres(input, bin_bounds) #c2(bin_bounds,stemp,m,bin_centers,centers)
 
-def c2_centres(bin_bounds,stemp,m,bin_centers):
+def c2_centres(input, bin_bounds,stemp,m,bin_centers):
     # calculate center for each bin
     bin_centers[0] =  (bin_bounds[0]+stemp[0]) / 2.0
     for i in range(1,m-1):
         bin_centers[i] = (bin_bounds[i]+bin_bounds[i-1])/2.0
     bin_centers[m-1] = (stemp[-1]+bin_bounds[-1]) / 2.0
 
+    #assert isinstance(input,np.ndarray) #editor-time code!
+    print input.shape
     # bin centers
     q_value = np.digitize(input, bin_bounds)
     return q_value, bin_bounds, bin_centers
 
-def c2_noncentres(bin_bounds):
+def c2_noncentres(input, bin_bounds):
     q_value = np.digitize(input, bin_bounds)
     return q_value, bin_bounds
 
 
 
-def discr(raw,M): #142x32 = siglen x ntr
+def discr_equalized(raw,M): #142x32 = siglen x ntr
     #    z_NxT=z_TxN.transpose()
     #    z_NxT_shape=z_NxT.shape
     #    #print z2d[0:10,0] # [ntr  x nlen ]
     #    z_Arr=z_NxT.reshape([z_NxT.size]) #straighted.  z2d.size=total elements
     #    #print z2d_reshaped[0:10] #if not trsnsposed,  tr1,tr2,tr3,  tr1,tr2,tr3
-    z_Arr=raw.flatten('F') #First, one round of siglen (one trial), then next trial, etc. In case of siglen x ntrials
+    z_Arr=raw.flatten('F')
+    #'F' means: First, one round of siglen (one trial), then next trial, etc. In case of siglen x ntrials
     zq_Arr,bin_bounds, bin_centers = atomic_quantize_uniform(z_Arr,M)
 
-    #zq_Arr,bin_bounds, bin_centers = pyentropy.quantise(z_Arr, M, uniform=uniform_code)
-    zq_NxT = zq_Arr.reshape(z_NxT_shape)
-    resp_dig = zq_NxT.transpose()
+    #    #zq_Arr,bin_bounds, bin_centers = pyentropy.quantise(z_Arr, M, uniform=uniform_code)
+    #    z_NxT_shape=raw.shape
+    #    zq_NxT = zq_Arr.reshape(z_NxT_shape)
+    #    resp_dig = zq_NxT.transpose()
+    resp_dig = np.reshape(zq_Arr,raw.shape,'F')
+    #dithinfo={'bin_bounds':bin_bounds, 'bin_centers':bin_centers}
+    #return resp_dig, dithinfo
+    return resp_dig, bin_bounds,bin_centers
 
-    return resp_dig, dithinfo
 def dith_unsure(raw,centres):
     print "error"
     return resp_dith, dithinfo
@@ -124,7 +131,7 @@ def dith_unsure(raw,centres):
 def almost_eq(a,b):
     return abs(a-b)<EPS
 
-def make_signals(taustd_s,taustd_n, M):
+def make_signals(taustd_s,taustd_n, binlen_sec, siglen_sec, ntr):
     #if 0
     #%4c1: failed (too slow)
     #% from test_lor3c2
@@ -141,16 +148,9 @@ def make_signals(taustd_s,taustd_n, M):
 
 
 
-    #%NTA=2.^[4:5];
-    #%NTA=2.^[4:8,9];
-    NTA=np.power(2,[4,5,6,8,10,12])
-    NTA=np.power(2,[4,5])
-    #nt_generate=max(NTA);
-    print NTA
-
     #fs_Hz=1000
-    binlen_sec=7.0/1000.0 #7,3,5,1
-    siglen_sec=1.000 #quick test
+    #binlen_sec=7.0/1000.0 #7,3,5,1
+    #siglen_sec=1.000 #quick test
     downsample_b = 7
     if False:
         #siglen_sec=10.000;
@@ -175,8 +175,11 @@ def make_signals(taustd_s,taustd_n, M):
     print "raw",nlen,max(NTA),
     #r2_raw = makelorresponse(tau_s,std_s, tau_n, std_n, max(NTA), nlen, fs_Hz,[], downsample_b)
     #r2_raw = makelorresponse(taustd_s, taustd_n, fs_Hz, (nlen,max(NTA)), [], downsample_b)
-    r2_raw = makelorresponse(taustd_s, taustd_n, fs_Hz, (nlen,max(NTA)), downsample_b)
+    r2_raw = makelorresponse(taustd_s, taustd_n, fs_Hz, (nlen,ntr), downsample_b)
     print "war"
+
+
+
 
     siglen_bins=int(siglen_sec/binlen_sec)
     del siglen_sec
@@ -185,7 +188,7 @@ def make_signals(taustd_s,taustd_n, M):
 
     assert siglen_bins == r2_raw.shape[0]
 
-    return r2_raw
+    return r2_raw, fs_Hz
 
 
 
@@ -197,43 +200,83 @@ taustd_s=(25.0/1000, 3.53)
 taustd_n=(12.0/1000, 5.55)
 M=5  #4,8,5,3,15
 
-print "***-4"
-r2_raw =make_signals(taustd_s,taustd_n, M)
-print "***-3"
-resp_dig,dithinfo1 = discr(r2_raw, M) #%not dithered
-print "***-2"
-resp_dith,dithinfo2 = dith_unsure(r2_raw, dithinfo1.centres) #%not dithered
+binlen_sec=7.0/1000.0 #7,3,5,1
+siglen_sec=1.000 #quick test
 
-print "***-1"
 
-resp_dig=resp_dith
-del  dithinfo
+#%NTA=2.^[4:5];
+#%NTA=2.^[4:8,9];
+NTA=np.power(2,[4,5,6,8,10,12])
+NTA=np.power(2,[4,5])
+#nt_generate=max(NTA);
+print NTA
+ntr=max(NTA)
+
+
+r2_raw,fs_Hz =make_signals(taustd_s,taustd_n, binlen_sec=binlen_sec, siglen_sec=siglen_sec, ntr=ntr)
+
+resp_dig,dithinfo1_xyz, dithinfo1_centres = discr_equalized(r2_raw, M) #%not dithered
+
+if False:
+    resp_dith,dithinfo2 = dith_unsure(r2_raw, dithinfo1_centres) #%not dithered
+
+
+
+if False:
+    resp_dig=resp_dith
+    del  dithinfo
+    resp_dig=resp_dig-1
+
 resp_dig=resp_dig-1
 
-print "***1"
-resp_cont=r2_raw;
-print "***2"
-resp_cont=resp_cont-resp_cont.flatten().mean()
-print "***3"
-resp_cont=resp_cont/resp_cont.flatten().std()/2.0*1*float(M)/float(M-1)
-print "***4"
-#% [-1,+1]
-resp_cont=(resp_cont+1.0)/2.0;  #% [0,1]
-resp_cont=resp_cont*float(M-1);
-if True:
-    print resp_cont.reshape
-    exit(0)
+print np.min(resp_dig),np.max(resp_dig)  #-1,3
+
+print M
+def continuous_cut(r2_raw):
+    resp_cont=r2_raw.copy()
+    print np.min(resp_cont),np.max(resp_cont)
+
+    resp_cont=resp_cont-resp_cont.flatten().mean()
+    resp_cont=resp_cont/(resp_cont.flatten().std()*2.0)*1*float(M)/float(M-1)
+    print np.min(resp_cont),np.max(resp_cont), resp_cont.flatten().mean(), '+',resp_cont.flatten().std()
+    print "***4"
+    #% [-1,+1]
+    resp_cont=(resp_cont+1.0)/2.0;  #% [0,1]
+    resp_cont=resp_cont*float(M-1)
+    print np.min(resp_cont),np.max(resp_cont), resp_cont.flatten().mean(), '+',resp_cont.flatten().std()
+
+    print resp_cont.shape
+    print np.min(resp_cont),np.max(resp_cont)  #-1.99974005189 5.98768186649
+
+    resp_cont[resp_cont<0]=0
+    print np.min(resp_cont)
+
+    resp_cont[resp_cont>M-1]=M-1
+
+    print np.min(resp_cont),np.max(resp_cont), resp_cont.flatten().mean(), '+',resp_cont.flatten().std()
     """
     resp_cont(resp_cont(:)<0)=0;
     resp_cont(resp_cont(:)>M-1)=M-1;
     """
 
+    return resp_cont
+
+resp_cont = continuous_cut(r2_raw)
+
+
+import analytical_exrxp as analytical
+#returns mi_persec, psd_s,psd_n,freq_arr,var_s,var_n
+a =analytical.exrxp_analytical_mi(taustd_s[0],taustd_s[1],taustd_n[0],taustd_n[1],fs_Hz, 0.0001)
+a_mi_persec = a[0] #ami_bps
+#ami_bps=analytical_lor(tau_s,std_s, tau_n, std_n, 1/(binlen_msec/1000), 0.0001);
+#binlen_sec = (binlen_msec/1000); %used later for normalization
+
+print a_mi_persec , "bit / sec"
+
 """
 #%clear r2_raw;
 
-
 #% analytical formula
-#%fs_Hz is used for Nyquist frequency
 #%ami=analytical_lor(tau_s,std_s, tau_n, std_n, fs_Hz, 0.0001);
 #%ami_perbin=mi/fs_Hz*binlen_msec;
 #
@@ -251,9 +294,9 @@ ami_bps=analytical_lor(tau_s,std_s, tau_n, std_n, 1/(binlen_msec/1000), 0.0001);
 #% new: 2.4512e-04
 
 binlen_sec = (binlen_msec/1000); %used later for normalization
+"""
 
-
-
+"""
 clear a;
 clear binlen_msec;
 
