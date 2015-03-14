@@ -1,6 +1,7 @@
 import numpy as np
 import exrxp
-import pyentropy
+#import pyentropy
+import time
 
 EPS=0.000000001
 
@@ -146,27 +147,16 @@ def make_signals(taustd_s,taustd_n, binlen_sec, siglen_sec, ntr):
     #tau_n=12.0/1
     #std_n=5.55 #%*200;
 
-
-
-    #fs_Hz=1000
-    #binlen_sec=7.0/1000.0 #7,3,5,1
-    #siglen_sec=1.000 #quick test
     downsample_b = 7
     if False:
-        #siglen_sec=10.000;
-        print siglen_sec, siglen_sec % binlen_sec
         siglen_sec=np.floor(siglen_sec/binlen_sec)*binlen_sec
         print siglen_sec, siglen_sec % binlen_sec
         downsample_b=binlen_sec*fs_Hz #%1, fs=1000 ===> 1   2==>2
-        nlen = siglen_sec*fs_Hz
-        #problem: print  0.994000 % 0.007000 - 0.007
-        #-2.60208521397e-17
-        #np.float     np.float128  np.float16   np.float32   np.float64   np.float_    np.floating
-        #
+        nlen = int(siglen_sec*fs_Hz)
         #%downsample_b happens to be equal to b, if fs=1000
         assert almost_eq(siglen_sec % binlen_sec, 0), "%f %% %f = %f"%(siglen_sec, binlen_sec, siglen_sec % binlen_sec,)
 
-    nlen = int(np.floor(siglen_sec/binlen_sec))
+    nlen = int(np.floor(siglen_sec/binlen_sec+EPS))
     print nlen,siglen_sec/binlen_sec
     fs_Hz = 1.0/(binlen_sec/float(downsample_b))
     print "fs_Hz",fs_Hz
@@ -201,7 +191,7 @@ taustd_n=(12.0/1000, 5.55)
 M=5  #4,8,5,3,15
 
 binlen_sec=7.0/1000.0 #7,3,5,1
-siglen_sec=1.000 #quick test
+siglen_sec=1.000 #quick test  #10.0
 
 
 #%NTA=2.^[4:5];
@@ -237,6 +227,11 @@ def continuous_cut(r2_raw):
     print np.min(resp_cont),np.max(resp_cont)
 
     resp_cont=resp_cont-resp_cont.flatten().mean()
+
+    #resp_cont=(resp_cont/(resp_cont.flatten().std()*2.0)*1*float(M)/float(M-1)+1.0)/2.0*float(M-1)
+    #resp_cont=resp_cont/resp_cont.flatten().std()*float(M)/4.0+float(M-1)/2
+
+
     resp_cont=resp_cont/(resp_cont.flatten().std()*2.0)*1*float(M)/float(M-1)
     print np.min(resp_cont),np.max(resp_cont), resp_cont.flatten().mean(), '+',resp_cont.flatten().std()
     print "***4"
@@ -275,21 +270,7 @@ print a_mi_persec , "bit / sec"
 
 """
 #%clear r2_raw;
-
-#% analytical formula
-#%ami=analytical_lor(tau_s,std_s, tau_n, std_n, fs_Hz, 0.0001);
-#%ami_perbin=mi/fs_Hz*binlen_msec;
-#
-#% %WHY?!
-#%a=analytical_lor(tau_s/binlen_msec,std_s, tau_n/binlen_msec, std_n, fs_Hz/binlen_msec, 0.0001);
-#%ami_perbin=a / (fs_Hz/binlen_msec);
-#% (tau_s_msec,  sigma_s,  tau_n_msec,  sigma_n, fs_Hz, d_freq)
-#%Ia_bits_per_sec
-#% Ia_bps --> ami_bps = analytical mi
 ami_bps=analytical_lor(tau_s,std_s, tau_n, std_n, 1/(binlen_msec/1000), 0.0001);
-#%ami_perbin=ami_bps* (binlen_msec/1000);
-#% 1/ (fs_Hz/binlen_msec) = binlen_msec / fs = above (bcoz, fs=1000)
-
 #% previous: 0.2362
 #% new: 2.4512e-04
 
@@ -299,8 +280,6 @@ binlen_sec = (binlen_msec/1000); %used later for normalization
 """
 clear a;
 clear binlen_msec;
-
-
 
 clearvars -except   resp_cont resp_dig M NTA binlen_sec siglen_bins tau_s tau_n ami_bps ...
     r2_raw std_* methid;
@@ -350,8 +329,13 @@ if 0
     
 end
 
-begintime=now;
-tic
+"""
+
+begintime = time.time()
+LARR=[1,3,6,7];
+MAX_L_DIRECT = Inf ***********
+
+"""
 %estims=cell(4,4);
 %LARR=[1,4,8,10];
 %LARR=[1,2:2:10];
@@ -359,18 +343,19 @@ tic
 %LARR=[1,2,3,6];
 %LARR=[1,2,3,6,7];
 %LARR=[1]; %
-LARR=[1,3,6,7];
-MAX_L_DIRECT = Inf;
+"""
 
-%for nti=10:length(NTA)
-for nti=1:length(NTA)
-    nt=NTA(nti);
-    for li=1:length(LARR)
-        L=LARR(li);
-        %lenL=floor(siglen_msec/binlen_msec/L)*L;
-        %lenL=floor(siglen_msec/L/binlen_msec)*L*binlen_msec;
-        lenL=floor(siglen_bins/L)*L;
-        
+
+#%for nti=10:length(NTA)
+for nti in range(len(NTA)):
+    nt=NTA[nti]
+    for li in range(len(LARR)):
+        L=LARR[li]
+        #%lenL=floor(siglen_msec/binlen_msec/L)*L;
+        #%lenL=floor(siglen_msec/L/binlen_msec)*L*binlen_msec;
+        #lenL=floor(siglen_bins/L)*L;
+        lenL=np.floor(siglen_bins/L)*L;
+
         %respcut=resp(:,1:lenL)';
         %  respcut=resp(1:nt,1:lenL)';
         if 0 %if dithering
