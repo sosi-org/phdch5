@@ -1,4 +1,6 @@
-
+"""
+biastype <= 1 tested implemented
+"""
 import numpy as np
 import scipy
 import matcompat
@@ -21,6 +23,7 @@ from lagrange3 import *
 
 def hr(spk, nta, biastype):
     #nta was nt
+    assert biastype <= 1
 
     # Local Variables: h44, h41, biastype, h2, h0, p22, h4, r44, spk, r41, h42, r43, r42, p44, p43, r22, r21, pp, h22, h00, h21, p42, bias0, bias1, bias2, p41, ns, nt, K, ntr, M, L, R, n1, h43, hc2, hc3, hc0, hc1, betac, idx, hc4, hc5, t2, ntr2, n, p, _range, bias, p21, n2, n4
     # Function calls: range_shuffle, simps_quad, randperm, log2, log, lagrange2, floor, hr, max, sum, lagrange3, eps, saddleentr3, range_frac, reshape, bayescount, probr, round, size
@@ -233,7 +236,7 @@ class TestClass(unittest.TestCase):
             range1=range_shuffle(nta)
             p,ctr=probr(spk,nta,range1,1, True)
             A = np.sort(ctr) # [0,0,0,...,0, ntr]
-            A[len(A)-1] == sum(nta)
+            assert A[len(A)-1] == sum(nta)
             assert sum(abs(A[range(len(A)-1)]))==0
 
             h_R=hr(spk,nta,biastype=BiasType.NAIVE0)
