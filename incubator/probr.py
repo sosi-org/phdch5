@@ -13,6 +13,9 @@ from range_frac import range_frac
 def probr(spk,nta,r,f, return_count=False):
     #function p=probr(spk,nt,r,f)
     """
+    nta and f together determin the trial numbers. since nta is th eoriginal number of trials, f is also needed for a subset of trials.
+    The function probrs does not have any of of nta and f as arguments and seems simpler. Because if focuses on one stim only.
+
     :param spk:
     :type spk: np.ndarray
     :param nta:
@@ -35,7 +38,7 @@ def probr(spk,nta,r,f, return_count=False):
     if DEBUG:
         _ns= spk.shape[3]
         big_ntr=max(nta)
-        assert big_ntr==spk.shape[2]
+        assert   big_ntr==spk.shape[2]
         assert r.shape[1] == spk.shape[2]/f
         #print r.shape, (_ns,big_ntr/f), f
         assert r.shape==(_ns,big_ntr/f)
@@ -69,6 +72,7 @@ def probr(spk,nta,r,f, return_count=False):
             #print min(q)  #but it should not contain zero!!
             #if min(q)<1:  #has no zeros
             #    print "warning: min(q) is %d "%(min(q),)
+            assert not min(q)<1
             #min(q) can be zero
             #assert min(q)==0   #1 may start from 30
             q.sort() #leaves r unsorted
@@ -77,12 +81,13 @@ def probr(spk,nta,r,f, return_count=False):
             #print "q(sorted)="
             #print q
             #assert sum(abs(q-np.arange(0,n2)))==0   #it may start from 30. no quarantee about the contents of r
-            print si
-            print r.shape
-            print r.size
-            print r[si,:]
-            print f #4
-            assert max(r[si,:])<nta[si]
+            #print si
+            #print r.shape
+            #print r.size
+            #print r[si,:]
+            #print f #4
+            #assert max(r[si,:])<nta[si]
+            assert max(r[si,:])<=nta[si]
             #Statement: r[si,:] will contain nta[si]/f elements. The rest are zero. These elements are valid elements of spk[0,,,si], i.e. spk[0,?,:nta[si],si].
 
 
@@ -120,7 +125,11 @@ def probr(spk,nta,r,f, return_count=False):
 
             #trials[(i-1):(i-1+new_nta[s]-1+1),:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s] ) #.transpose()?
             #trials[(i-1):(i-1+new_nta[s]-1+1),:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s], [0,3]) #.transpose()?
-            trials[(i-1):(i+new_nta[s]-1),:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s], [0,3]) #.transpose()?
+            #trials[(i-1):(i+new_nta[s]-1),:] = np.squeeze( spk[0,:,r[s,range(new_nta[s])]-1,s], [0,3]) #.transpose()?
+            ri = r[s,range(new_nta[s])]-1
+            trials[(i-1):(i+new_nta[s]-1),:] = np.squeeze( spk[0,:,ri,s], [0,3]) #.transpose()?
+            assert min(ri)>=0 #numpy?!!!
+
 
             #   #idx[s,0:(nta[s]-1)] = np.random.permutation(range(nta[s]))
             #   idx[s,0:nta[s]] = np.random.permutation(range(nta[s]))+1
@@ -151,6 +160,8 @@ def probr(spk,nta,r,f, return_count=False):
             #print type(ri)  #np.ndarray
             A=spk[0,:,ri,s]
             #A=spk[0,:,r[s, 0:new_nta[s]]-1,s]
+            assert min(ri)>=0 #numpy?!!!!
+
 
             #print A.shape #(1000,1)
             A2=np.squeeze(A) #A2=np.squeeze( A , [0,3] )
@@ -186,7 +197,7 @@ def probr(spk,nta,r,f, return_count=False):
     #assert max(max(wi))>=1
 
     #print _debug_show_table(np.sort(wi.flatten()),range(100,200)) #
-    #print _debug_show_table2(wi.flatten()) #
+    #print _debug_show_table2(wi.flatten()) #new_nta
     #print new_nta
     #print wi.shape  # 6x1   NTR x
     assert wi.shape[0] == sum(new_nta)
@@ -227,6 +238,9 @@ def probr(spk,nta,r,f, return_count=False):
     #p=(count.transpose()/sum(count))
     p=count / PROB_TYPE(sum(count))
     #print p
+
+    assert p.shape==(M**L,)
+
     if return_count:
         count=count.astype(COUNT_TYPE)
         return p,count
@@ -282,11 +296,11 @@ def probr_NOT(spk, nt, r, f):
 import hx_test_utils as tst
 import unittest
 
-class TestsPROBR(unittest.TestCase):
+class Tests_probs(unittest.TestCase):
 
-  def test_pqmargs(self):
+  def test_1(self):
         for L in [5,2,1]:
-            for typ in [1,2]:
+            for typ in [1,2,3]:
                 if typ==1:
                     spk,_L,nta_arr,_ns = tst._test_data_spk___allcases(L=L,M=3)
                 elif typ==2:
@@ -295,30 +309,20 @@ class TestsPROBR(unittest.TestCase):
                 elif typ==3:
                     _nta_arr = np.array([6*10,7*10,8*10])
                     spk,_L,nta_arr,_ns = tst._test_data_spk_rand(L=L, nta_arr=_nta_arr, M=3)
+                #todo: more tests
                 else:
                     assert False
-                f=4
-                if min(nta_arr)>=f:
-                    for k in range(1,f+1):
-                        print "nta_arr",nta_arr, "f=",f,"k=",k, "typ",typ, "L",L
-                        _range = range_shuffle(nta_arr)
-                        r43 = range_frac(_range, nta_arr, f, k)
-                        p43 = probr(spk, nta_arr, r43, f, return_count = False )
-                        print p43
-
-
-
-                #pn, counts = probr(spk, nta_arr,r,f, return_count=return_count)
-                #print pn
-                #print pd
-
-
-                #    spikes=np.zeros([nt,L])+1
-                #    spikes[0,0]=0
-                #    pn, count = probr(spikes, L, q, return_count=return_count)
-                #    #print pn
-                #    #print pd
-
+                for f in [1,4]:
+                    if min(nta_arr)>=f:
+                        for k in range(1,f+1):
+                            print "nta_arr",nta_arr, "f=",f,"k=",k, "typ",typ, "L",L
+                            _range = range_shuffle(nta_arr)
+                            r43 = range_frac(_range, nta_arr, f, k)
+                            p43 = probr(spk, nta_arr, r43, f, return_count = False )
+                            print p43, '=>',sum(p43)
+                            assert abs(sum(p43.flatten()) - 1.0) < EPS
+                            print "p.shape",p43.shape
+                            #todo: check the resulting values
 
 
 
