@@ -1,9 +1,9 @@
 """
 biastype <= 1 tested implemented
 """
-import numpy as np
-import scipy
-import matcompat
+#import numpy as np
+#import scipy
+#import matcompat
 
 #import matplotlib.pylab as plt
 from lagrange2 import lagrange2
@@ -49,7 +49,8 @@ def hr(spk, nta, biastype):
 
     ntr = np.sum(nta)
     #%total number of trials
-    ns = matcompat.size(spk, 4)
+    #ns = matcompat.size(spk, 4)
+    ns = spk.shape[3]
     assert type(ns) is int
     
     _range = range_shuffle(nta)

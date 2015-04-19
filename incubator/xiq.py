@@ -1,8 +1,8 @@
 
 import numpy as np
-import scipy
-import matcompat
-import matplotlib.pylab as plt
+#import scipy
+#import matcompat
+#import matplotlib.pylab as plt
 from consts import EPS
 from range_shuffle import range_shuffle
 from probr import probr
@@ -24,9 +24,11 @@ def xiq(spk, nt, q, biastype):
     #%3= Panzeri NOT IMPLEMENTED
     #%4= Montemurro NOT IMPLEMENTED
     #%5= Nemenman NOT IMPLEMENTED
-    L = matcompat.size(spk, 2.)
+    #L = matcompat.size(spk, 2.)
     #%ntr=size(spk,3);
     #%_srange0=[1:ntr];
+
+    L=spk.shape[1]
     _srange0 = range_shuffle(nt)
     #%M=1+max(reshape(spk,1,[]));
     p = probr(spk, nt, _srange0, 1)

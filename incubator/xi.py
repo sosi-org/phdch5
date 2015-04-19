@@ -1,9 +1,9 @@
 
 import numpy as np
-import scipy
-import matcompat
+#import scipy
+#import matcompat
 from consts import EPS
-import matplotlib.pylab as plt
+#import matplotlib.pylab as plt
 
 from range_shuffle import range_shuffle
 from probr import probr
@@ -17,9 +17,9 @@ def xi(spk, nt, biastype):
     # Local Variables: h44, j, h41, biastype, h2, h21, spk, h4, r44, bias, r41, h42, r43, r42, r22, r21, out, pr, p43i, p44i, prind, p42r, h22, rg, p42i, ns, nt, p44r, p22r, ntr, L, p22i, p41r, ntrg, g, ntr4, h, p43r, ntr2, xi0, p21i, _srange0, p21r, h43, p41i
     # Function calls: range_shuffle, rand, xi, log2, lagrange2, floor, sum, lagrange3, eps, probrind, range_frac, probr, size
     #%03/05/2005 quadratic extrapolation added
-    ntr = matcompat.size(spk, 3)
-    ns = matcompat.size(spk, 4)
-    L = matcompat.size(spk, 2)
+    ntr = spk.shape[2] #matcompat.size(spk, 3)
+    ns = spk.shape[3] #matcompat.size(spk, 4)
+    L = spk.shape[1] #matcompat.size(spk, 2)
     #%trials=(reshape(spkt,L,[]))'; %comprising all stimulus conditions
     _srange0 = range_shuffle(nt)
 
@@ -106,7 +106,8 @@ def xi(spk, nt, biastype):
             p21i = probrind(spk, (nt-1.), rg, 1.)
             h21 = h21-np.sum((p21r*np.log2((p21i+EPS))))
             
-        h21 = matdiv(h21, g)
+        #h21 = matdiv(h21, g)
+        h21 = h21 / float(g)
         xi0 = lagrange2(np.array(np.hstack((1./ntrg, 1./nt[0]))), np.array(np.hstack((h21, h))), 0.)
     elif _switch_val == 8.:
         #%This is the 3 point extrapolation taking 1/4, 1/2 and 1/1 of the trials

@@ -1,7 +1,7 @@
 
 import numpy as np
-import scipy
-import matcompat
+#import scipy
+#import matcompat
 
 
 from hx_types import is_any_int_type

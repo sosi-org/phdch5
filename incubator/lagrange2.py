@@ -1,8 +1,8 @@
 
 import numpy as np
-import scipy
-import matcompat
-import matplotlib.pylab as plt
+#import scipy
+#import matcompat
+#import matplotlib.pylab as plt
 
 
 def matdiv(a,b):

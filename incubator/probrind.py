@@ -1,9 +1,10 @@
 
 import numpy as np
-import scipy
-import matcompat
-import matplotlib.pylab as plt
+#import scipy
+#import matcompat
+#import matplotlib.pylab as plt
 from consts import EPS, BIG_EPS
+from probr import probr
 
 """
 import string
@@ -59,8 +60,8 @@ def probrind(spk, nt, range_, f):
     #%ntr=size(spk,3);
 
     new_nt = nt/f #np.floor((nt/ f))
-    ns = matcompat.size(spk, 4.)
-    L = matcompat.size(spk, 2.)
+    ns = spk.shape[3] #matcompat.size(spk, 4.)
+    L = spk.shape[1] #matcompat.size(spk, 2.)
     #M = matcompat.max(np.reshape(spk, 1., np.array([])))+1.
     M = max(spk.flatten())+1
     if M == 1.:

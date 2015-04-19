@@ -1,7 +1,7 @@
 
 import numpy as np
-import scipy
-import matcompat
+#import scipy
+#import matcompat
 
 # if available import pylab (from matlibplot)
 import matplotlib.pylab as plt

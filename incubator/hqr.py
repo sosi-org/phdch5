@@ -1,9 +1,9 @@
 
 import numpy as np
-import scipy
-import matcompat
+#import scipy
+#import matcompat
 from consts import EPS
-import matplotlib.pylab as plt
+#import matplotlib.pylab as plt
 
 #not fully processed
 
@@ -37,10 +37,12 @@ def hqr(spk, nt, q, biastype):
     hc5 = 0.
     #%ntr=size(spk,3);
     #%spkt=squeeze(spk(1,:,:,:)); 
-    L = matcompat.size(spk, 2.)
+    #L = matcompat.size(spk, 2.)
+    L = spk.shape[1]
     #%trials=(reshape(spkt,L,[]))'; %comprising all stimulus conditions
     #%ntr=size(spk,3);
-    ns = matcompat.size(spk, 4.)
+    #ns = matcompat.size(spk, 4.)
+    ns = spk.shape[3]
     _srange0 = range_shuffle(nt)
     p = probqr(spk, nt, _srange0, q, 1)
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

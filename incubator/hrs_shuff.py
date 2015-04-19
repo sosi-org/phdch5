@@ -1,7 +1,7 @@
 
 import numpy as np
-import scipy
-import matcompat
+#import scipy
+#import matcompat
 
 from hrs import hrs
 import matplotlib.pylab as plt
@@ -28,9 +28,12 @@ def hrs_shuff(spk, nt, biastype):
     hc3 = 0.
     hc4 = 0.
     hc5 = 0.
-    ntr = matcompat.size(spk, 3.)
-    ns = matcompat.size(spk, 4.)
-    L = matcompat.size(spk, 2.)
+    #ntr = matcompat.size(spk, 3.)
+    #ns = matcompat.size(spk, 4.)
+    #L = matcompat.size(spk, 2.)
+    ntr =  spk.shape[2]
+    ns = spk.shape[3]
+    L = spk.shape[1]
     h0 = 0.
     err = 0.
 

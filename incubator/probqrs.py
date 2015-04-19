@@ -1,7 +1,7 @@
 
 import numpy as np
-import scipy
-import matcompat
+#import scipy
+#import matcompat
 #from CON*
 import matplotlib.pylab as plt
 from consts import EPS

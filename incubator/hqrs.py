@@ -1,7 +1,7 @@
 
 import numpy as np
 import scipy
-import matcompat
+#import matcompat
 from hmarg import hmarg
 from range_shuffle import range_shuffle
 from pqmargs import pqmargs
@@ -35,8 +35,8 @@ def hqrs(spk, nt, q, biastype):
     #%hc4= Montemurro
     #%hc5= Nemenman
     #%ntr=size(spk,3);
-    ns = matcompat.size(spk, 4.)
-    L = matcompat.size(spk, 2.)
+    ns = spk.shape[3] #ns = matcompat.size(spk, 4.)
+    L=spk.shape[1] #L = matcompat.size(spk, 2.)
     h0 = 0.
     err = 0.
     #%Selects indeces ranges for sample size corrections

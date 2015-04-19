@@ -1,6 +1,6 @@
 
 import numpy as np
-import scipy
+#import scipy
 import math
 #import matcompat
 from make_lor9d import make_lor9d

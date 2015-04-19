@@ -1,7 +1,7 @@
 #todo
 import numpy as np
-import scipy
-import matcompat
+#import scipy
+#import matcompat
 
 import matplotlib.pylab as plt
 from consts import EPS
@@ -43,8 +43,8 @@ def hrsind(spk, nt, biastype):
     hc4 = 0.
     hc5 = 0.
     ntrt = np.sum(nt)
-    ns = matcompat.size(spk, 4.)
-    L = matcompat.size(spk, 2.)
+    ns = spk.shape[3] #ns = matcompat.size(spk, 4.)
+    L = spk.shape[1] #L = matcompat.size(spk, 2.)
     h0 = 0.
     err = 0.
     if False:

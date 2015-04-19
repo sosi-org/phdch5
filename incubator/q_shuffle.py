@@ -1,10 +1,10 @@
 #todo: not processed
 #FIXME: make a unittest
 import numpy as np
-import scipy
-import matcompat
-import matplotlib.pylab as plt
-from consts import EPS
+#import scipy
+#import matcompat
+#import matplotlib.pylab as plt
+#from consts import EPS
 
 def randperm(n):
     return np.random.permutation(range(n))+1
