@@ -7,30 +7,76 @@ import time
 import matplotlib.pylab as plt
 
 from makelorresponse import makelorresponse
+
 from discr import discr
 from dith_unsure import dith_unsure
 from analytical_lor import analytical_lor
-from hr import hr
-from hrs import hrs
-#from my_hr import my_hr
-from range_shuffle import range_shuffle
 
-#print range_shuffle(np.array([5,3,1],dtype=int))
-#from hr import hr
-#from hr import hr
-#from hr import hr
-from q_shuffle import q_shuffle
-from hqrs import hqrs
-from hqr import hqr
-from xiq import xiq
-
-from hrs_shuff import hrs_shuff
-from hrsind import hrsind
-from xi import xi
-from    my_hrs import my_hrs
-from    my_prs_dith1 import my_prs_dith1
-from    my_pr import my_pr
 from hx_types import is_any_int_type
+from q_shuffle import q_shuffle
+
+MOCK=False
+
+if not MOCK:
+    from hr import hr
+    from hrs import hrs
+    #from my_hr import my_hr
+    from range_shuffle import range_shuffle
+
+    #print range_shuffle(np.array([5,3,1],dtype=int))
+    #from hr import hr
+    #from hr import hr
+    #from hr import hr
+    from hqrs import hqrs
+    from hqr import hqr
+    from xiq import xiq
+
+    from hrs_shuff import hrs_shuff
+    from hrsind import hrsind
+    from xi import xi
+    from    my_hrs import my_hrs
+    from    my_prs_dith1 import my_prs_dith1
+    from    my_pr import my_pr
+else:
+    import random
+    def mock():
+        return random.uniform(0.8,0.99)
+    def hr(spk, nta, methid):
+        return mock()
+    def hrs(spk, nta, methid):
+        return mock()
+    def hqrs(spk2_dig, nts, q, methid):
+        return mock()
+    def hqr(spk2_dig, nts, q, methid):
+        return mock()
+    def xiq(spk2_dig, nts, q, methid):
+        return mock()
+    def hrs_shuff(spk2_dig, nts, methid):
+        return mock()
+    def hrsind(spk2_dig, nts, methid):
+        return mock()
+    def xi(spk2_dig, nts, methid):
+        return mock()
+    def my_hrs(prs_dith, ps_dith, methid):
+        return mock()
+    def my_pr(prs_dith, ps_dith):
+        return mock()
+    def my_hr(pr_dith, methid):
+        return mock()
+    def my_hrs(prs_dig, ps_dig, methid):
+        return mock()
+    def my_pr(prs_dig, ps_dig):
+        return mock()
+    def my_hr(pr_dig, methid):
+        return mock()
+    def my_prs_dith1(spk2_cont, nta):
+        return mock(), mock()
+    def my_prs(spk2_dig, nta):
+        return mock(), mock()
+
+
+
+
 
 def x():
 
@@ -185,9 +231,7 @@ def x():
             #% my_save_png('test_lor4f1---signal-xcorr-v12-temp',{},[4,3]);
             
     begintime = time.time()
-    tic=time.time()
-    #estims_cell=[[],[],[],[]]
-    estims_cell=[[{}],[{}],[{}],[{}]]
+    #tic=time.time()
 
     #%estims=cell(4,4);
     #%LARR=[1,4,8,10];
@@ -201,10 +245,24 @@ def x():
     #LARR = [1+1, 3, 6, 7]
     LARR = [1+1, 4]
     MAX_L_DIRECT = np.Inf
+
+    #estims_cell=[[],[],[],[]]
+    #estims_cell=[[{}],[{}],[{}],[{}]]
+    #estims_cell=[[{}]]
+    estims_cell=[]
+    #len(NTA)
+    #print len(LARR),len(NTA), "******************"
+    for i in range(0,len(LARR)):
+            estims_cell.append([])
+            for j in range(0,len(NTA)):
+                print i,j
+                estims_cell[i].append({})
+
+
     #%for nti=10:len(NTA)
-    for nti in np.arange(1, (len(NTA))+1):
+    for nti in range(1, len(NTA)+1):
         nt = int(NTA[int(nti)-1])
-        for li in np.arange(1., (len(LARR))+1):
+        for li in range(1, len(LARR)+1):
             L = LARR[int(li)-1]
             #%lenL=floor(siglen_msec/b_msec/L)*L;
             #%lenL=floor(siglen_msec/L/b_msec)*L*b_msec;
@@ -362,6 +420,7 @@ def x():
             #print "HERE2"
             #exit(0)
 
+
             q = 1
             estims_cell[int(li)-1][int(nti)-1]['_hqrs'] = hqrs(spk2_dig, nts, q, methid)
             estims_cell[int(li)-1][int(nti)-1]['_hqr'] = hqr(spk2_dig, nts, q, methid)
@@ -396,35 +455,59 @@ def x():
 
         #%% -
         #%a2d1_th=[];
-        a2d1_d = np.array([])
-        a2d2_qd = np.array([])
-        a2d3_dsh = np.array([])
-        nta1d = np.array([])
-        for ntj in np.arange(1., (nti)+1):
-            for li in np.arange(1., (len(LARR))+1):
+        #a2d1_d = [] #np.array([])
+        a2d1_d = [] #np.array([])
+        a2d2_qd = [] #np.array([])
+        a2d3_dsh = [] #np.array([])
+        nta1d = [] #np.array([])
+        for ntj in range(1, nti+1):
+            a2d1_d.append([])
+            assert len(a2d1_d)-1 == ntj-1 #assert index number
+            a2d3_dsh.append([])
+            assert len(a2d3_dsh)-1 == ntj-1 #assert index number
+            a2d2_qd.append([])
+            assert len(a2d2_qd)-1 == ntj-1 #assert index number
+
+            #ee=estims_cell[li-1][ntj-1]
+            #nta1d.append( ee['nt'] )
+
+            nta1d.append( estims_cell[0][ntj-1]['nt'] )
+            assert len(nta1d)-1 == ntj-1
+
+            for li in range(1, len(LARR)+1 ):
                 #%L=LARR(li);
                 #ee=estims{li,ntj};
                 print estims_cell  #list of list of dict
                 #print estims_cell.shape
                 print estims_cell[0][0]
-                ee=estims_cell[li][ntj]
+                print li,ntj
+                ee=estims_cell[li-1][ntj-1]
                 #%if  L<=MAX_L_DIRECT
                 if 'hrs_d' in ee: #haskey(ee, 'hrs_d'):
                     #% mi1=(ee['_hr']-ee['_hrs'] -ee['hrs_ind'] + ee['hrs_sh']  )/ee['L'];
                     #%mi1=(ee['hr_th']-ee['hrs_th']  )/ee['L'];
                     #%mi1=(ee['hr_d']-ee['hrs_d'] -ee['hrs_ind'] + ee['hrs_sh']  )/ee['L'];
                     #%mi2=(ee['hr_d']-ee['hrs_d'])/ee['L'];
-                    mi1_plugin = matdiv(ee['hr_d']-ee['hrs_d'], ee['L'])
-                    mi1_sh = matdiv(ee['hr_d']-ee['hrs_d']-ee['hrs_ind']+ee['hrs_sh'], ee['L'])
+                    assert not type(ee['hr_d']) is list
+                    #mi1_plugin = matdiv(ee['hr_d']-ee['hrs_d'], ee['L'])
+                    #mi1_sh = matdiv(ee['hr_d']-ee['hrs_d']-ee['hrs_ind']+ee['hrs_sh'], ee['L'])
+                    mi1_plugin = (ee['hr_d']-ee['hrs_d']) / ee['L']
+                    mi1_sh = (ee['hr_d']-ee['hrs_d']-ee['hrs_ind']+ee['hrs_sh']) /  ee['L']
                 else:
                     mi1_plugin = 0.
                     #%NaN;
                     mi1_sh = 0.
                     
                 
+                print mi1_plugin
                 #%a2d1_th(ntj,li)=mi1;
-                a2d1_d[int(ntj)-1,int(li)-1] = mi1_plugin
-                a2d3_dsh[int(ntj)-1,int(li)-1] = mi1_sh
+                #a2d1_d[int(ntj)-1,int(li)-1] = mi1_plugin
+                a2d1_d[ntj-1].append(mi1_plugin)
+                assert len(a2d1_d[ntj-1])==li-1+1
+                #a2d3_dsh[int(ntj)-1,int(li)-1] = mi1_sh
+                a2d3_dsh[ntj-1].append( mi1_sh )
+                assert len(a2d3_dsh[ntj-1])==li-1+1
+                
                 #%mi2=(ee['_xi']-ee['hrs_ind'])/ee['L'];
                 #%mi2=(ee['_hqr']-ee['_hrs'] -ee['_hqrs'] + ee['hrs_q']  )/ee['L'];
                 #%mi2=(ee['_xiq']-ee['hrs_q'] +ee['hrs_sh'] - ee['hrs_ind']  )/ee['L']; %DID NOT
@@ -432,16 +515,25 @@ def x():
                 #%mi2=(ee['_hqr']-ee['hrs_q'])/ee['L']; %+ee['hrs_sh'] - ee['hrs_ind']  )/ee['L'];
                 #%slightly biased (uses hrs_q-sh)
                 #% ************ CHECK THIS *************
-                mi2 = matdiv(ee['_xiq']-ee['_hqrs'], ee['L'])
+                #mi2 = matdiv(ee['_xiq']-ee['_hqrs'], ee['L'])
+                mi2 = (ee['_xiq']-ee['_hqrs']) /  ee['L']
                 #%mi2=(ee['_hqr']-ee['_hqrs'])/ee['L'];
                 #% ... %+ee['hrs_sh'] - ee['hrs_ind']  )/ee['L'];
                 #%mi2=(ee['_xi']-ee['hrs_ind'])/ee['L'];
                 #%mi2=(ee.hr1-ee.hrs1)/ee['L'];
                 #%mi2=(ee['hr_d']-ee['hrs_d'])/ee['L'];
-                a2d2_qd[int(ntj)-1,int(li)-1] = mi2
+                #a2d2_qd[int(ntj)-1,int(li)-1] = mi2
+                a2d2_qd[ntj-1].append( mi2 )
+                assert len(a2d2_qd[ntj-1]) -1 == li-1
                 #%mi3=(ee['_hqr']-ee['hrs_q'])/ee['L']; %+ee['hrs_sh'] - ee['hrs_ind']  )/ee['L'];
                 #%mi3=(ee['_xiq']-ee['hrs_q'])/ee['L'];
-                nta1d[int(ntj)-1] = ee['nt']
+                #nta1d[int(ntj)-1] = ee['nt']
+                #nta1d.append( ee['nt'] )
+                #print len(nta1d),ntj
+                #print nta1d
+                #assert len(nta1d)-1 == ntj-1
+                #assert len(nta1d)-1 == ntj-1  ##COMPILE_TIME:CHECK_PATTERN: MATCH LAST_INDEX(nta1d) == ntj-1   #PLANGNOTE
+                assert nta1d[ntj-1] == ee['nt']
                 #%    end
                 #%end
                
@@ -579,9 +671,35 @@ def x():
         time.sleep(0.2)
         print("sleep")
         
-    finishtime = now
-    toc
+    finishtime = time.time() #now()
+    #toc=time.time()
     print('.')
+
+
+    print estims_cell
+    maxc = 0
+    collect_keys={}
+    for i in range(0,len(estims_cell)):
+        for j in range(0,len(estims_cell[i])):
+            for k in estims_cell[i][j]:
+               collect_keys[k]=0
+               if maxc < j+1:
+                    maxc = j+1
+    print collect_keys.keys()
+    print
+    ka={}
+    for k in collect_keys:
+       ka[k]=np.zeros((len(estims_cell),maxc))
+
+    for i in range(0,len(estims_cell)):
+        for j in range(0,len(estims_cell[i])):
+            for k in collect_keys:
+               ka[k][i,j]=estims_cell[i][j][k]
+    for k in collect_keys:
+        print k+":",
+        print ka[k].T
+    return
+
     dont_plot_this = False
     #%% - plots
     if dont_plot_this:
@@ -592,7 +710,7 @@ def x():
             plt.subplot(1., 2., 1.)
         
         
-        plt.hold(on)
+        #plt.hold(on)
         #%box on;
         styc = 'rgbmkckkk'
         for li in np.arange(1., (len(LARR))+1):
@@ -631,7 +749,7 @@ def x():
     plt.figure(4.)
     plt.clf
     plt.plot(resp_cont[0,:])
-    plt.hold(on)
+    #plt.hold(on)
     plt.plot((resp_dig[0,:]-0.), 'r')
     plt.figure(10.)
     plt.clf
@@ -684,5 +802,10 @@ def x():
     plt.legend(show)
 
     return estims_cell
+
+
+
+
+
 
 x()
