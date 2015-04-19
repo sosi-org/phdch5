@@ -21,7 +21,7 @@ def randperm(n):
     return np.random.permutation(range(n))+1
 
 def hqrs(spk, nt, q, biastype):
-
+    assert biastype < 2
     # Local Variables: h41, biastype, h2, h0, iu, h4, Rd, r44, spk, r41, h42, r43, r42, id, Rn, n, r22, r21, out, bias0, p44n, le, p43d, p44d, trials, h21, h22, p42n, rg, g, pd, nn, hnemt, p42d, ns, pn, spkt, ntrg, p43n, K, ntr, L, bias22, bias, R, p22n, p22d, hg, p21d, hdt, betac, err, idx, ntr4, nt, j, bias21, ntr2, p21n, q, i, _srange, h44, t, p41d, h43, p41n, il
     # Function calls: range_shuffle, lagrange3, simps_quad, log, lagrange2, floor, reshape, sum, randperm, hqrs, eps, pqmargs, bayescount, saddleentr3, hmarg, squeeze, rand, round, size
     #%It will estimate the entropy of a binary chain giving the result in bits per bin
@@ -63,7 +63,8 @@ def hqrs(spk, nt, q, biastype):
         #%compute P(r|s)
         #spkt=squeeze(spk(1,:,[1:nt(t)],t));  % L x ntrials
         #spkt = np.squeeze(spk[0,:,np.array(np.hstack((0:nt[int(t)-1]))),int(t)-1])
-        spkt = np.squeeze(spk[0,:,0:nt[t-1],int(t)-1])
+        #spkt = np.squeeze(spk[0,:,0:nt[t-1],int(t)-1])
+        spkt = spk[0,:,0:nt[t-1],t-1]
         #print spkt.shape
         assert spkt.shape==(L,nt[t-1]) #2x16
         #% L x ntrials

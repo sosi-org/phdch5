@@ -243,7 +243,7 @@ def x():
     #LARR = np.array(np.hstack((1., 3., 6., 7.)))
     #LARR = np.array(np.hstack((1+1, 3, 6, 7)))
     #LARR = [1+1, 3, 6, 7]
-    LARR = [1+1, 4]
+    LARR = [1,1+1, 4]
     MAX_L_DIRECT = np.Inf
 
     #estims_cell=[[],[],[],[]]

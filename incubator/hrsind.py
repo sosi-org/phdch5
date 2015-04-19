@@ -59,10 +59,24 @@ def hrsind(spk, nt, biastype):
         #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         #%Direct estimation
         #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        trials = np.squeeze(spk[0,:,0:nt[int(t)-1],int(t)-1]).conj().T
-        #%trials set for current stimulus condition
-        if L == 1:
-            trials = trials.conj().T
+
+        
+        #trials1 = spk[:,0:L,0:nt[t-1],t-1:t] #  1x1x16x1
+        #trials1 = spk[0,0:L,0:nt[t-1],t-1:t] #  1x16x1
+        #trials1 = spk[0,0:L,0:nt[t-1],t-1] #  1x16
+        #print trials1.shape
+        #print trials1.T.shape
+
+        #trials = np.squeeze(spk[0,:,0:nt[t-1],t-1]).T
+        trials = spk[0,0:L,0:nt[t-1],t-1].T
+        assert trials.shape == (nt[t-1],L)
+        #    #%trials set for current stimulus condition
+        #    if L == 1:
+        #        #trials = trials.conj().T
+        #        trials = trials.reshape( (nt[t-1],L) )
+        #        #todo: a better indexing/slicing to avoid the need for this.
+        #    
+        #    assert trials.shape == (nt[t-1],L)
 
 
         dh = dh_ind(trials)
