@@ -1,0 +1,6 @@
+
+EPS = 0.0000000000001
+#EPS = finfo(float).eps
+#EPS = 0.0000000000001
+
+BIG_EPS = EPS
