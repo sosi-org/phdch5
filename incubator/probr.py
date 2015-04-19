@@ -297,7 +297,7 @@ import hx_test_utils as tst
 import unittest
 
 class Tests_probs(unittest.TestCase):
-
+  #todo: generate_spka
   def test_1(self):
         for L in [5,2,1]:
             for typ in [1,2,3]:
@@ -315,13 +315,13 @@ class Tests_probs(unittest.TestCase):
                 for f in [1,4]:
                     if min(nta_arr)>=f:
                         for k in range(1,f+1):
-                            print "nta_arr",nta_arr, "f=",f,"k=",k, "typ",typ, "L",L
+                            #print "nta_arr",nta_arr, "f=",f,"k=",k, "typ",typ, "L",L
                             _range = range_shuffle(nta_arr)
                             r43 = range_frac(_range, nta_arr, f, k)
                             p43 = probr(spk, nta_arr, r43, f, return_count = False )
-                            print p43, '=>',sum(p43)
+                            #print p43, '=>',sum(p43)
                             assert abs(sum(p43.flatten()) - 1.0) < EPS
-                            print "p.shape",p43.shape
+                            #print "p.shape",p43.shape
                             #todo: check the resulting values
 
 

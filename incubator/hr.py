@@ -228,9 +228,9 @@ class TestClass(unittest.TestCase):
             assert spk.shape[1]==L
             #print type(spk[0,0,0,0]) #numpy.int16
             h_R=hr(spk,nta_arr,biastype=1)
-            print h_R
+            #print h_R
             h_R=hr(spk,nta_arr,biastype=0)
-            print h_R
+            #print h_R
 
             """
             range1=range_shuffle(nta)

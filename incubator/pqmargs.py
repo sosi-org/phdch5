@@ -11,7 +11,8 @@ import myhist
 def pqmargs(spikes, L, q):
     """ q: markov order
     """
-    print "L=%d, q=%d"%(L,q)
+    assert type(q) is int
+    #print "L=%d, q=%d"%(L,q)
     #assert spikes.shape==(trials,L)
     (debug_trials,debug_L) = spikes.shape #just for annotation. Invar-time variables. Invar-time can be rutime or dbug or compile-time. They may move between times.  If this variable is used later, it's for consistency chekck. The main function is anotation (naming). Like: ##"The number of trials" := x.shape[0]  #PLANGNOTE
 
@@ -20,13 +21,13 @@ def pqmargs(spikes, L, q):
     # Local Variables: spikes, words, nn, i, npd, M, L, wi, q, npn, ws, il, pd, pn, nn2
     # Function calls: max, sum, eps, pqmargs, zeros, reshape, histc
     #M = 1.+matcompat.max(np.reshape(spikes, 1., np.array([])))
-    print spikes.shape
+    #print spikes.shape
     assert spikes.shape[1] > 0
     assert spikes.shape[0] > 0
 
     M = 1+np.max(spikes.flatten())
     if M == 1:
-        print "M"
+        #print "M"
         M = 2
     
     #%Pr(r(l)|r(l-1),r(l-2),...r(l-q),s) ? %yes. q+1 becasue of the one on the left     
@@ -132,7 +133,7 @@ def pqmargs(spikes, L, q):
         assert type(il) is int
         #    words=spikes(:,il:i-1);
         words = spikes[:,int(il-1):(i-1+1-1)]
-        print words.shape, "pd .shape"
+        #print words.shape, "pd .shape"
         #wi = 1.+np.dot(words, (M**np.array(np.hstack((np.arange(0., (ws-1.)+1))))).conj().T)
         M_pw_ws = (M**np.arange(0, ws-1+1)).reshape((ws,1))
         #    wi=1+words*(M.^[0:ws-1])';
@@ -193,7 +194,7 @@ def pqmargs(spikes, L, q):
 #pn[v,l] = Pr(v,?|:)
 #q=0 ==> pd[:] = [1,0,0,0,0]. why? because there is no v!  It is basically Pr(0|...) It will not be used.
 
-from hx_test_utils import *
+import hx_test_utils as tst
 import unittest
 
 class TestM(unittest.TestCase):
@@ -216,15 +217,41 @@ class TestM(unittest.TestCase):
             #print pn
             #print pd
 
-
             M=3
             nt=M**L
-            spikes=n_ary(np.arange(0,M**L),L,M)
+            spikes=tst.n_ary(np.arange(0,M**L),L,M)
             assert spikes.shape == (nt,L)
             pn, pd = pqmargs(spikes, L, q)
-            print pn
-            print pd
+            #print pn
+            #print pd
 
+  """
+  def test_1(self):
+        for L in [5,2,1]:
+            for typ in [1,2,3]:
+                if typ==1:
+                    spk,_L,nta_arr,_ns = tst._test_data_spkNtL___allcases(L=L,M=3)
+                elif typ==2:
+                    spk,_L,nta_arr,_ns = tst._test_data_spkNtL___allcases(L=L,M=3)
+                    spk=spk*0+1
+                elif typ==3:
+                    _nta_arr = np.array([6*10,7*10,8*10])
+                    spk,_L,nta_arr,_ns = tst._test_data_spkNtL_rand(L=L, nta_arr=_nta_arr, M=3)
+                #todo: more tests
+                else:
+                    assert False
+                for f in [1,4]:
+                    if min(nta_arr)>=f:
+                        for k in range(1,f+1):
+                            #print "nta_arr",nta_arr, "f=",f,"k=",k, "typ",typ, "L",L
+                            _range = range_shuffle(nta_arr)
+                            r43 = range_frac(_range, nta_arr, f, k)
+                            p43 = probr(spk, nta_arr, r43, f, return_count = False )
+                            #print p43, '=>',sum(p43)
+                            assert abs(sum(p43.flatten()) - 1.0) < EPS
+                            #print "p.shape",p43.shape
+                            #todo: check the resulting values
+  """
 
   #def test_isupper(self):
   #    self.assertTrue('FOO'.isupper())

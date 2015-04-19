@@ -13,7 +13,7 @@ def probrs(spk, r, s, M):
     assert len(r.shape)==1
     _numtrial = len(r)  #PLANGNOTE: annotation
     assert s>=1
-    assert type(s) is int
+    assert type(s) is int, "%r"%(type(s))
 
     DIM_STIM=3
     DIM_AUX=0
